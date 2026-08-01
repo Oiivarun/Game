@@ -1,0 +1,44 @@
+# Holdings — Fly.io configuration
+#
+# ONE MACHINE. NOT TWO.
+# Rooms live in this process's memory. Two machines behind the same hostname
+# means two separate room stores: you and your friend join "the same" code and
+# end up in different games. `fly launch --ha=false` and `fly scale count 1`
+# are not optional here.
+
+app = "holdings"          # must be globally unique — change it or pass --name
+primary_region = "bom"    # Mumbai. sin = Singapore, fra = Frankfurt, iad = Virginia
+
+[build]
+
+[env]
+  PORT = "8080"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_start_machines = true
+  auto_stop_machines = "off"   # "suspend" to sleep when idle and pay less;
+                               # a suspend mid-match ends that match
+  min_machines_running = 1
+  processes = ["app"]
+
+  # Every player holds one Server-Sent Events connection open for the whole
+  # session. Default limits are low enough that a full lobby would look like
+  # overload and tempt Fly into starting a second machine.
+  [http_service.concurrency]
+    type = "connections"
+    soft_limit = 180
+    hard_limit = 220
+
+[[http_service.checks]]
+  grace_period = "8s"
+  interval = "30s"
+  method = "GET"
+  timeout = "4s"
+  path = "/api/rooms"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
+  cpus = 1

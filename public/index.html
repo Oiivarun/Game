@@ -1,0 +1,765 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Holdings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;-webkit-tap-highlight-color:transparent}
+body{
+  background:#080A0D;color:#E8EBEF;
+  font-family:Inter,system-ui,-apple-system,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  display:flex;align-items:center;justify-content:center;
+  padding:16px;
+}
+.shell{width:100%;max-width:1000px;display:flex;flex-direction:column;gap:10px}
+
+/* ── top bar ── */
+.hud{display:flex;align-items:center;gap:14px}
+.title{font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(232,235,239,.4);white-space:nowrap}
+.title b{color:rgba(232,235,239,.78);font-weight:600;letter-spacing:.2em}
+.share{
+  flex:1;display:flex;height:7px;border-radius:4px;overflow:hidden;
+  background:rgba(255,255,255,.07);min-width:60px;
+}
+.share i{display:block;height:100%;transition:width .4s cubic-bezier(.3,1,.4,1)}
+.timer{font-size:12px;font-weight:500;color:rgba(232,235,239,.45);font-variant-numeric:tabular-nums;min-width:44px;text-align:right}
+
+/* ── board ── */
+.board{position:relative;border-radius:16px;overflow:hidden;background:#0B0E12;border:1px solid rgba(255,255,255,.07)}
+canvas{display:block;width:100%;height:auto;touch-action:none;cursor:crosshair}
+
+.overlay{
+  position:absolute;inset:0;display:none;place-items:center;
+  background:rgba(8,10,13,.88);backdrop-filter:blur(3px);
+}
+.overlay.on{display:grid}
+.panel{display:none;text-align:center;padding:26px;width:100%;max-width:430px}
+.panel.on{display:block}
+.panel h2{font-size:30px;font-weight:700;letter-spacing:-.03em;margin:0 0 8px}
+.panel p{margin:0 0 20px;font-size:13.5px;color:rgba(232,235,239,.55);line-height:1.6}
+.err{color:#FF5A6E;font-size:12.5px;min-height:17px;margin:0 0 10px}
+
+button{
+  font-family:inherit;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  background:#E8EBEF;color:#0B0E12;border:0;border-radius:9px;padding:11px 22px;cursor:pointer;
+}
+button:hover{filter:brightness(.93)}
+button:disabled{opacity:.4;cursor:default;filter:none}
+button.mini{
+  font-size:10.5px;font-weight:500;letter-spacing:.1em;padding:6px 12px;border-radius:7px;
+  background:none;color:rgba(232,235,239,.45);border:1px solid rgba(255,255,255,.13);
+  transition:color .15s,border-color .15s;
+}
+button.mini:hover{color:#E8EBEF;border-color:rgba(255,255,255,.3);filter:none}
+button.mini.armed{color:#FF5A6E;border-color:rgba(255,90,110,.55)}
+button.ghost{background:none;color:rgba(232,235,239,.6);border:1px solid rgba(255,255,255,.16)}
+button.ghost:hover{color:#E8EBEF;border-color:rgba(255,255,255,.34);filter:none}
+
+input{
+  font-family:inherit;font-size:14px;font-weight:500;color:#E8EBEF;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);
+  border-radius:9px;padding:11px 14px;width:100%;outline:none;
+}
+input:focus{border-color:rgba(62,214,192,.55)}
+input::placeholder{color:rgba(232,235,239,.28)}
+#code{text-transform:uppercase;letter-spacing:.34em;text-align:center;font-weight:600}
+
+.row{display:flex;gap:8px;margin-bottom:10px}
+.row input{flex:1}
+.or{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:rgba(232,235,239,.25);margin:16px 0 12px}
+
+.bigcode{
+  font-size:44px;font-weight:700;letter-spacing:.22em;margin:0 0 2px;padding-left:.22em;
+  color:#3ED6C0;
+}
+.sub{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:rgba(232,235,239,.35);margin:0 0 18px}
+
+.seats{display:flex;flex-direction:column;gap:6px;margin:0 0 18px;text-align:left}
+.seat{
+  display:flex;align-items:center;gap:9px;padding:8px 12px;border-radius:9px;
+  background:rgba(255,255,255,.035);font-size:13px;
+}
+.seat .dot{width:9px;height:9px;border-radius:50%;flex:none}
+.seat .who{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seat .tag{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:rgba(232,235,239,.35)}
+.seat.empty{opacity:.5}
+
+.legend{display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-size:11.5px;color:rgba(232,235,239,.45)}
+.legend .p{display:flex;align-items:center;gap:6px}
+.legend .dot{width:8px;height:8px;border-radius:50%}
+.legend .n{font-variant-numeric:tabular-nums;color:rgba(232,235,239,.72);font-weight:500}
+.legend .me{color:rgba(232,235,239,.9)}
+.hint{margin-left:auto;color:rgba(232,235,239,.3)}
+.warn{color:#FFC53D}
+
+@media (max-width:620px){
+  .panel h2{font-size:24px}
+  .bigcode{font-size:34px}
+  .title{font-size:10px}
+}
+</style>
+
+<div class="shell">
+  <div class="hud">
+    <span class="title" id="hudTitle">Holdings</span>
+    <div class="share" id="share"></div>
+    <span class="timer" id="timer">0:00</span>
+    <button class="mini" id="restart" type="button" style="display:none">Restart</button>
+    <button class="mini" id="leave" type="button" style="display:none">Leave</button>
+  </div>
+
+  <div class="board" id="board">
+    <canvas id="game" width="1000" height="640"></canvas>
+
+    <div class="overlay on" id="ov">
+
+      <!-- ── menu ── -->
+      <div class="panel on" id="p-menu">
+        <h2>Holdings</h2>
+        <p>Drag from your circles onto any other circle to send half its troops.<br>Drag across several of your own first to send from all of them.</p>
+        <p class="err" id="menuErr"></p>
+        <div class="row"><input id="name" maxlength="18" placeholder="Your name" autocomplete="off"></div>
+        <button id="btnCreate" type="button">Create a room</button>
+        <div class="or" id="orRow">or join one</div>
+        <div class="row" id="joinRow">
+          <input id="code" maxlength="4" placeholder="CODE" autocomplete="off" spellcheck="false">
+          <button class="ghost" id="btnJoin" type="button">Join</button>
+        </div>
+      </div>
+
+      <!-- ── room ── -->
+      <div class="panel" id="p-room">
+        <div class="bigcode" id="roomCode">····</div>
+        <p class="sub">Room code</p>
+        <div class="seats" id="seats"></div>
+        <p class="err" id="roomErr"></p>
+        <button id="btnStart" type="button">Start the match</button>
+        <div class="or"><span id="waitMsg">Anyone with the link can drop in</span></div>
+        <button class="ghost" id="btnCopy" type="button">Copy invite link</button>
+      </div>
+
+      <!-- ── result ── -->
+      <div class="panel" id="p-over">
+        <h2 id="overT">The map is yours</h2>
+        <p id="overP"></p>
+        <button id="btnAgain" type="button">Play again</button>
+        <div class="or"><span id="againMsg">&nbsp;</span></div>
+        <button class="ghost" id="btnBack" type="button">Back to the room</button>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="legend" id="legend"></div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ══════════════════════════════════════════════════════════════
+   Constants — these mirror the server. Only what drawing needs.
+   ══════════════════════════════════════════════════════════════ */
+const W = 1000, H = 640;
+const SEND_FRACTION = 0.5;
+const TROOP_SPEED   = 132;
+const TROOP_GAP     = TROOP_SPEED * 0.028;
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const FACTIONS = [
+  { name:"Teal",    main:"#3ED6C0", dim:"#0E332E", glow:"62,214,192" },
+  { name:"Crimson", main:"#FF5A6E", dim:"#38151B", glow:"255,90,110" },
+  { name:"Amber",   main:"#FFC53D", dim:"#372B10", glow:"255,197,61" },
+  { name:"Violet",  main:"#B98CFF", dim:"#271F3C", glow:"185,140,255" },
+  { name:"Lime",    main:"#8BE04E", dim:"#1F3115", glow:"139,224,78" }
+];
+const NEUTRAL = { name:"Free", main:"#78838F", dim:"#171B21", glow:"120,131,143" };
+const paint = o => (o == null || o < 0 ? NEUTRAL : FACTIONS[o]);
+
+const cv  = document.getElementById("game");
+const ctx = cv.getContext("2d");
+const $   = id => document.getElementById(id);
+
+/* ══════════════════════════════════════════════════════════════
+   State
+   ══════════════════════════════════════════════════════════════ */
+const net = { code:null, pid:null, seat:null, host:false, phase:"menu", roster:[], es:null, ok:true };
+const G = {
+  nodes: [],        /* {x,y,r,tier,home,owner,count,pulse,flash} */
+  links: [],
+  flights: new Map(),
+  elapsed: 0,
+  started: false
+};
+let pending = [];   /* our own sends the server has not acknowledged yet */
+let cid = 0;
+let view = { c: [], ghosts: [] };
+
+let sel = [], dragging = false, px = 0, py = 0;
+
+/* ══════════════════════════════════════════════════════════════
+   Talking to the server
+   ══════════════════════════════════════════════════════════════ */
+async function api(action, extra){
+  const body = Object.assign({ action, code: net.code, pid: net.pid }, extra || {});
+  try {
+    const r = await fetch("/api/cmd", {
+      method: "POST",
+      headers: { "content-type":"application/json" },
+      body: JSON.stringify(body)
+    });
+    return await r.json();
+  } catch (e){
+    return { ok:false, error:"Cannot reach the server." };
+  }
+}
+
+function connect(){
+  if (net.es) net.es.close();
+  const es = new EventSource("/api/stream?code=" + net.code + "&pid=" + net.pid);
+  net.es = es;
+
+  es.addEventListener("hello",  () => { net.ok = true; paintHud(); });
+  es.addEventListener("lobby",  e => onLobby(JSON.parse(e.data)));
+  es.addEventListener("init",   e => onInit(JSON.parse(e.data)));
+  es.addEventListener("state",  e => onState(JSON.parse(e.data)));
+  es.onopen  = () => { net.ok = true; paintHud(); };
+  es.onerror = () => { net.ok = false; paintHud(); };
+}
+
+function onLobby(d){
+  net.phase  = d.phase;
+  net.host   = d.host === net.pid;
+  net.roster = d.players;
+  const me = d.players.find(p => p.pid === net.pid);
+  net.seat = me ? me.seat : null;
+  net.winner = d.winner;
+  paintRoom();
+  paintHud();
+  if (d.phase === "lobby")      showPanel("p-room");
+  else if (d.phase === "over")  showOver();
+  else                          showPanel(null);
+}
+
+function onInit(d){
+  G.nodes = d.nodes.map(a => ({
+    x:a[0], y:a[1], r:a[2], tier:a[3], home:!!a[4],
+    owner:null, count:0, pulse:0, flash:0
+  }));
+  G.links = d.links;
+  G.flights.clear();
+  pending = [];
+  G.started = true;
+  net.seat = d.seat;
+  paintHud();
+}
+
+function onState(d){
+  if (!G.nodes.length) return;
+  /* the server has processed everything up to `ack` — drop those guesses */
+  pending = pending.filter(p => p.cid > d.ack);
+
+  for (let i = 0; i < G.nodes.length; i++){
+    const n = G.nodes[i];
+    const owner = d.n[i*2] < 0 ? null : d.n[i*2];
+    const count = d.n[i*2+1];
+    if (owner !== n.owner) n.pulse = 1;
+    else if (count < n.count) n.flash = 1;
+    n.owner = owner;
+    n.count = count;
+  }
+
+  const seen = new Set();
+  for (const a of d.f){
+    const id = a[0];
+    seen.add(id);
+    let fl = G.flights.get(id);
+    if (!fl){
+      fl = { id, from:a[1], to:a[2], owner:a[3], count:a[4], delivered:a[5], prog:a[6] };
+      G.flights.set(id, fl);
+    } else {
+      fl.delivered = a[5];
+      const drift = a[6] - fl.prog;
+      /* nudge toward the server rather than snapping — snapping stutters */
+      fl.prog += Math.abs(drift) > 40 ? drift : drift * 0.35;
+    }
+  }
+  for (const id of [...G.flights.keys()]) if (!seen.has(id)) G.flights.delete(id);
+
+  G.elapsed = d.t;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Prediction — our own sends are drawn the instant we release, then
+   quietly replaced by the server's version of the same column
+   ══════════════════════════════════════════════════════════════ */
+function issue(from, to){
+  if (!from.length) return;
+  const id = ++cid;
+  pending.push({ cid:id, from:from.slice(), to, t0: performance.now() });
+  api("send", { from, to, cid:id });
+}
+
+function rebuild(){
+  const c = G.nodes.map(n => n.count);
+  const ghosts = [];
+  const now = performance.now();
+  for (const p of pending){
+    for (const s of p.from){
+      const n = G.nodes[s];
+      if (!n || n.owner !== net.seat || s === p.to) continue;
+      const k = Math.floor(c[s] * SEND_FRACTION);
+      if (k < 1) continue;
+      c[s] -= k;
+      const t = G.nodes[p.to];
+      ghosts.push({
+        from:s, to:p.to, owner:net.seat, count:k, delivered:0,
+        prog:(now - p.t0) / 1000 * TROOP_SPEED,
+        len: Math.max(8, Math.hypot(t.x - n.x, t.y - n.y) - n.r - t.r * 0.82)
+      });
+    }
+  }
+  view = { c, ghosts };
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Input
+   ══════════════════════════════════════════════════════════════ */
+function pos(e){
+  const r = cv.getBoundingClientRect();
+  return { x:(e.clientX - r.left) / r.width * W, y:(e.clientY - r.top) / r.height * H };
+}
+function nodeAt(p){
+  for (let i = 0; i < G.nodes.length; i++){
+    const n = G.nodes[i];
+    if (Math.hypot(n.x - p.x, n.y - p.y) < n.r + 8) return i;
+  }
+  return -1;
+}
+const canPlay = () => net.phase === "live" && net.seat !== null;
+
+cv.addEventListener("pointerdown", e => {
+  if (!canPlay()) return;
+  cv.setPointerCapture(e.pointerId);
+  const p = pos(e); px = p.x; py = p.y;
+  const i = nodeAt(p);
+  sel = [];
+  if (i >= 0 && G.nodes[i].owner === net.seat){ sel.push(i); dragging = true; }
+});
+cv.addEventListener("pointermove", e => {
+  const p = pos(e); px = p.x; py = p.y;
+  if (!dragging) return;
+  const i = nodeAt(p);
+  if (i >= 0 && G.nodes[i].owner === net.seat && sel.indexOf(i) < 0) sel.push(i);
+});
+function release(){
+  if (dragging){
+    const t = nodeAt({ x:px, y:py });
+    if (t >= 0) issue(sel.filter(s => s !== t), t);
+  }
+  dragging = false; sel = [];
+}
+cv.addEventListener("pointerup", release);
+cv.addEventListener("pointercancel", release);
+cv.addEventListener("contextmenu", e => e.preventDefault());
+
+/* ══════════════════════════════════════════════════════════════
+   Render
+   ══════════════════════════════════════════════════════════════ */
+function drawColumn(fl){
+  const a = G.nodes[fl.from], b = G.nodes[fl.to];
+  if (!a || !b) return;
+  const c = FACTIONS[fl.owner];
+  const ang = Math.atan2(b.y - a.y, b.x - a.x);
+  const ux = Math.cos(ang), uy = Math.sin(ang);
+  const nx = -uy, ny = ux;
+  ctx.fillStyle = c.main;
+  for (let i = fl.delivered; i < fl.count; i++){
+    const arc = fl.prog - i * TROOP_GAP;
+    if (arc < 0) break;              /* still forming behind the wall */
+    if (arc >= fl.len) continue;     /* landed, waiting on the server */
+    const off = (i % 5 - 2) * 4.5;
+    const d = a.r + arc;
+    ctx.beginPath();
+    ctx.arc(a.x + ux * d + nx * off, a.y + uy * d + ny * off, 3.1, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function render(){
+  ctx.clearRect(0, 0, W, H);
+  if (!G.nodes.length) return;
+
+  ctx.strokeStyle = "rgba(255,255,255,.045)";
+  ctx.lineWidth = 1;
+  for (const l of G.links){
+    const a = G.nodes[l[0]], b = G.nodes[l[1]];
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+  }
+
+  if (dragging && sel.length){
+    const t = nodeAt({ x:px, y:py });
+    const mine = FACTIONS[net.seat] || FACTIONS[0];
+    ctx.setLineDash([5, 7]);
+    ctx.lineWidth = 2;
+    for (const s of sel){
+      const a = G.nodes[s];
+      ctx.strokeStyle = (t >= 0 && t !== s) ? mine.main : "rgba(" + mine.glow + ",.35)";
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(t >= 0 ? G.nodes[t].x : px, t >= 0 ? G.nodes[t].y : py);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    if (t >= 0){
+      const n = G.nodes[t];
+      ctx.strokeStyle = mine.main;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(n.x, n.y, n.r + 9, 0, Math.PI * 2); ctx.stroke();
+    }
+  }
+
+  for (let i = 0; i < G.nodes.length; i++){
+    const n = G.nodes[i];
+    const c = paint(n.owner);
+    const owned = n.owner !== null;
+
+    if (owned){
+      const g = ctx.createRadialGradient(n.x, n.y, n.r * .5, n.x, n.y, n.r * 2.5);
+      g.addColorStop(0, "rgba(" + c.glow + ",.20)");
+      g.addColorStop(1, "rgba(" + c.glow + ",0)");
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(n.x, n.y, n.r * 2.5, 0, Math.PI * 2); ctx.fill();
+    }
+
+    if (n.pulse > 0 && !REDUCED){
+      ctx.strokeStyle = "rgba(" + c.glow + "," + (n.pulse * .5) + ")";
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(n.x, n.y, n.r + (1 - n.pulse) * 26, 0, Math.PI * 2); ctx.stroke();
+    }
+
+    ctx.fillStyle = c.dim;
+    ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2); ctx.fill();
+
+    ctx.strokeStyle = c.main;
+    ctx.lineWidth = n.home ? 3.4 : 2.2;
+    ctx.globalAlpha = owned ? 1 : .55;
+    ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2); ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    if (n.tier === 2 && !n.home){
+      ctx.globalAlpha = owned ? .55 : .3;
+      ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.arc(n.x, n.y, n.r - 6, 0, Math.PI * 2); ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+    if (n.home){
+      ctx.fillStyle = c.main;
+      ctx.globalAlpha = .16;
+      ctx.beginPath(); ctx.arc(n.x, n.y, n.r - 5, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+
+    if (n.flash > 0){
+      ctx.fillStyle = "rgba(255,255,255," + (n.flash * .3) + ")";
+      ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2); ctx.fill();
+    }
+    if (sel.indexOf(i) >= 0){
+      ctx.strokeStyle = "#fff"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(n.x, n.y, n.r + 6, 0, Math.PI * 2); ctx.stroke();
+    }
+
+    ctx.fillStyle = owned ? "#fff" : "rgba(232,235,239,.72)";
+    ctx.font = "600 " + (n.home ? 19 : n.tier === 2 ? 17 : n.tier === 1 ? 15 : 13) + "px Inter, sans-serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(String(Math.max(0, view.c[i] != null ? view.c[i] : n.count)), n.x, n.y + 1);
+  }
+  ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+
+  for (const fl of G.flights.values()) drawColumn(fl);
+  for (const fl of view.ghosts)        drawColumn(fl);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Chrome — HUD, legend, panels
+   ══════════════════════════════════════════════════════════════ */
+const shareEl = $("share"), legendEl = $("legend");
+const bars = [], counts = [], names = [];
+
+function buildHud(){
+  shareEl.textContent = ""; legendEl.textContent = "";
+  bars.length = counts.length = names.length = 0;
+  for (let i = 0; i < FACTIONS.length; i++){
+    const b = document.createElement("i");
+    b.style.background = FACTIONS[i].main; b.style.width = "0%";
+    shareEl.appendChild(b); bars.push(b);
+
+    const p = document.createElement("span");
+    p.className = "p";
+    const d = document.createElement("span");
+    d.className = "dot"; d.style.background = FACTIONS[i].main;
+    const nm = document.createElement("span");
+    nm.textContent = FACTIONS[i].name;
+    const num = document.createElement("span");
+    num.className = "n"; num.textContent = "0";
+    p.append(d, nm, num);
+    legendEl.appendChild(p);
+    counts.push(num); names.push(nm);
+  }
+  const hint = document.createElement("span");
+  hint.className = "hint"; hint.id = "hint";
+  hint.textContent = "drag from yours onto anything";
+  legendEl.appendChild(hint);
+}
+
+function seatName(seat){
+  const p = net.roster.find(x => x.seat === seat);
+  if (!p) return "AI";
+  return p.live ? p.name : p.name + " (away)";
+}
+
+function paintHud(){
+  /* runs several times a second — only touch the DOM when something moved */
+  const title = net.code ? "Holdings &middot; <b>" + net.code + "</b>" : "Holdings";
+  if ($("hudTitle").innerHTML !== title) $("hudTitle").innerHTML = title;
+  $("restart").style.display = (net.host && net.phase === "live") ? "" : "none";
+  $("leave").style.display   = net.code ? "" : "none";
+  for (let i = 0; i < FACTIONS.length; i++){
+    const label = seatName(i), cls = i === net.seat ? "me" : "";
+    if (names[i].textContent !== label) names[i].textContent = label;
+    if (names[i].className !== cls) names[i].className = cls;
+  }
+  const hint = $("hint");
+  if (hint){
+    const wipedOut = net.phase === "live" && net.seat !== null && G.started && G.nodes.length &&
+                     G.nodes.some(n => n.owner !== null) &&
+                     !G.nodes.some(n => n.owner === net.seat) &&
+                     ![...G.flights.values()].some(f => f.owner === net.seat);
+    const set = (txt, cls) => { if (hint.textContent !== txt){ hint.textContent = txt; hint.className = cls; } };
+    if (!net.ok)                                  { set("reconnecting…", "hint warn"); }
+    else if (wipedOut)                            { set("you are out — watching", "hint warn"); }
+    else if (net.phase === "live" && net.seat === null){ set("spectating", "hint"); }
+    else                                          { set("drag from yours onto anything", "hint"); }
+  }
+}
+
+let hudT = 0;
+function hud(dt){
+  hudT += dt;
+  if (hudT < .18) return;
+  hudT = 0;
+  const total = G.nodes.length || 1;
+  for (let i = 0; i < FACTIONS.length; i++){
+    const held = G.nodes.filter(n => n.owner === i).length;
+    bars[i].style.width = (held / total * 100) + "%";
+    counts[i].textContent = String(held);
+  }
+  $("timer").textContent = fmt(G.elapsed);
+  paintHud();
+}
+const fmt = s => Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
+
+function showPanel(id){
+  const ov = $("ov");
+  for (const p of document.querySelectorAll(".panel")) p.classList.remove("on");
+  if (!id){ ov.classList.remove("on"); return; }
+  ov.classList.add("on");
+  $(id).classList.add("on");
+}
+
+function paintRoom(){
+  if (!net.code) return;
+  $("roomCode").textContent = net.code;
+  const box = $("seats");
+  box.textContent = "";
+  for (let s = 0; s < FACTIONS.length; s++){
+    const p = net.roster.find(x => x.seat === s);
+    const row = document.createElement("div");
+    row.className = "seat" + (p ? "" : " empty");
+    const d = document.createElement("span");
+    d.className = "dot"; d.style.background = FACTIONS[s].main;
+    const who = document.createElement("span");
+    who.className = "who";
+    who.textContent = p ? p.name : "Open — played by AI";
+    const tag = document.createElement("span");
+    tag.className = "tag";
+    tag.textContent = p ? (p.pid === net.pid ? "you" : (p.live ? "" : "away")) : "";
+    row.append(d, who, tag);
+    box.appendChild(row);
+  }
+  const specs = net.roster.filter(p => p.seat === null);
+  if (specs.length){
+    const row = document.createElement("div");
+    row.className = "seat empty";
+    row.textContent = specs.length + " watching";
+    box.appendChild(row);
+  }
+  $("btnStart").style.display = net.host ? "" : "none";
+  $("waitMsg").textContent = net.host
+    ? "Anyone with the link can drop in"
+    : "Waiting for the host to start";
+  $("btnAgain").style.display = net.host ? "" : "none";
+  $("againMsg").textContent = net.host ? "\u00a0" : "Waiting for the host";
+}
+
+function showOver(){
+  const w = net.winner;
+  const mine = G.nodes.filter(n => n.owner === net.seat).length;
+  const holder = net.roster.find(p => p.seat === w);
+  $("overT").textContent =
+    w === net.seat && net.seat !== null ? "The map is yours"
+    : w == null ? "Match over"
+    : (holder ? holder.name : FACTIONS[w].name) + " took the map";
+  $("overP").innerHTML = "Held " + mine + " of " + (G.nodes.length || 30) + " &middot; " + fmt(G.elapsed);
+  showPanel("p-over");
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Joining and hosting
+   ══════════════════════════════════════════════════════════════ */
+function remember(){
+  try {
+    sessionStorage.setItem("holdings", JSON.stringify({ code:net.code, pid:net.pid }));
+    localStorage.setItem("holdings.name", $("name").value.trim());
+  } catch (e){}
+}
+function enterRoom(code, pid){
+  net.code = code; net.pid = pid;
+  remember();
+  const url = location.pathname + "?r=" + code;
+  history.replaceState(null, "", url);
+  connect();
+  paintHud();
+}
+
+$("btnCreate").addEventListener("click", async () => {
+  $("menuErr").textContent = "";
+  const r = await api("create", { name: $("name").value.trim(), code:null, pid:null });
+  if (!r.ok) return ($("menuErr").textContent = r.error || "Could not create the room.");
+  enterRoom(r.code, r.pid);
+});
+
+$("btnJoin").addEventListener("click", () => doJoin($("code").value));
+$("code").addEventListener("keydown", e => { if (e.key === "Enter") doJoin($("code").value); });
+$("name").addEventListener("keydown", e => {
+  if (e.key === "Enter") ($("btnJoin").classList.contains("ghost") ? $("btnCreate") : $("btnJoin")).click();
+});
+
+async function doJoin(raw){
+  const code = String(raw || "").toUpperCase().trim();
+  $("menuErr").textContent = "";
+  if (code.length !== 4) return ($("menuErr").textContent = "Room codes are four characters.");
+  let prev = {};
+  try { prev = JSON.parse(sessionStorage.getItem("holdings") || "{}"); } catch (e){}
+  const r = await api("join", {
+    code, pid: prev.code === code ? prev.pid : null,
+    name: $("name").value.trim()
+  });
+  if (!r.ok) return ($("menuErr").textContent = r.error || "Could not join.");
+  enterRoom(r.code, r.pid);
+}
+
+$("btnStart").addEventListener("click", () => api("start"));
+$("btnAgain").addEventListener("click", () => api("restart"));
+$("btnBack").addEventListener("click",  () => showPanel("p-room"));
+
+$("btnCopy").addEventListener("click", async () => {
+  const link = location.origin + location.pathname + "?r=" + net.code;
+  try {
+    await navigator.clipboard.writeText(link);
+    $("btnCopy").textContent = "Link copied";
+    setTimeout(() => ($("btnCopy").textContent = "Copy invite link"), 1600);
+  } catch (e){
+    $("roomErr").textContent = link;
+  }
+});
+
+$("leave").addEventListener("click", () => {
+  api("leave");
+  if (net.es) net.es.close();
+  try { sessionStorage.removeItem("holdings"); } catch (e){}
+  net.code = net.pid = null; net.seat = null; net.phase = "menu"; net.roster = [];
+  G.nodes = []; G.links = []; G.flights.clear(); pending = []; view = { c:[], ghosts:[] };
+  history.replaceState(null, "", location.pathname);
+  paintHud();
+  showPanel("p-menu");
+});
+
+/* Restart is two-step while a match is live: the first press arms it, a
+   second within 2.6s commits. It throws away everyone's run, not just ours. */
+const restartBtn = $("restart");
+let armed = 0;
+function disarm(){ armed = 0; restartBtn.classList.remove("armed"); restartBtn.textContent = "Restart"; }
+function hitRestart(){
+  if (!net.host || net.phase !== "live") return;
+  if (armed > 0){ disarm(); api("restart"); return; }
+  armed = 2.6;
+  restartBtn.classList.add("armed");
+  restartBtn.textContent = "Sure?";
+}
+restartBtn.addEventListener("click", hitRestart);
+addEventListener("keydown", e => {
+  if (document.activeElement && document.activeElement.tagName === "INPUT") return;
+  if (e.key === "r" || e.key === "R"){ e.preventDefault(); hitRestart(); }
+  else if (e.key === "Escape") disarm();
+});
+
+/* ══════════════════════════════════════════════════════════════
+   Boot
+   ══════════════════════════════════════════════════════════════ */
+buildHud();
+paintHud();
+
+try { $("name").value = localStorage.getItem("holdings.name") || ""; } catch (e){}
+const wanted = new URLSearchParams(location.search).get("r");
+let resumed = null;
+try { resumed = JSON.parse(sessionStorage.getItem("holdings") || "null"); } catch (e){}
+
+if (wanted){
+  /* arrived on someone's invite link — joining is the point, so it leads */
+  const c = wanted.toUpperCase().slice(0, 4);
+  $("code").value = c;
+  $("btnJoin").textContent = "Join " + c;
+  $("btnJoin").classList.remove("ghost");
+  $("btnCreate").classList.add("ghost");
+  $("btnCreate").textContent = "Start your own room instead";
+  $("p-menu").querySelector("h2").textContent = "Join room " + c;
+  $("orRow").textContent = "or";
+  $("p-menu").insertBefore($("joinRow"), $("btnCreate"));
+  $("p-menu").insertBefore($("orRow"),   $("btnCreate"));
+  if (resumed && resumed.code === c) doJoin(c);
+  else $("name").focus();
+} else if (resumed && resumed.code){
+  $("code").value = resumed.code;
+  doJoin(resumed.code);
+}
+
+let last = performance.now();
+(function loop(now){
+  let dt = (now - last) / 1000; last = now;
+  if (dt > 1/20) dt = 1/20;
+  if (armed > 0){ armed -= dt; if (armed <= 0) disarm(); }
+
+  for (const n of G.nodes){
+    if (n.pulse > 0) n.pulse = Math.max(0, n.pulse - dt * 2.6);
+    if (n.flash > 0) n.flash = Math.max(0, n.flash - dt * 4.5);
+  }
+  if (net.phase === "live"){
+    for (const fl of G.flights.values()) fl.prog += TROOP_SPEED * dt;
+    G.elapsed += dt;
+  }
+  rebuild();
+  render();
+  hud(dt);
+  requestAnimationFrame(loop);
+})(performance.now());
+
+})();
+</script>
+</html>

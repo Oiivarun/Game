@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: holdings
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node src/index.js
+    healthCheckPath: /api/rooms
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
