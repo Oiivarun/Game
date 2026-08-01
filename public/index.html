@@ -205,20 +205,31 @@ let sel = [], dragging = false, px = 0, py = 0;
 /* ══════════════════════════════════════════════════════════════
    Talking to the server
    ══════════════════════════════════════════════════════════════ */
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+/* worth retrying: a wrong-machine hit while the app runs on more than one
+   instance, a brief network blip, or a mid-deploy hiccup */
+const RETRYABLE = /closed|not in this room|no room with that code|server error/i;
 async function api(action, extra){
   const body = Object.assign({ action, code: net.code, pid: net.pid }, extra || {});
-  try {
-    const r = await fetch("/api/cmd", {
-      method: "POST",
-      headers: { "content-type":"application/json" },
-      body: JSON.stringify(body)
-    });
-    return await r.json();
-  } catch (e){
-    return { ok:false, error:"Cannot reach the server." };
+  let last = { ok:false, error:"Cannot reach the server." };
+  for (let attempt = 0; attempt < 5; attempt++){
+    if (attempt) await sleep(150 * attempt);
+    try {
+      const r = await fetch("/api/cmd", {
+        method: "POST",
+        headers: { "content-type":"application/json" },
+        body: JSON.stringify(body)
+      });
+      if (r.status === 429) return { ok:false, error:"Slow down a moment." };
+      const j = await r.json();
+      if (j.ok || !RETRYABLE.test(j.error || "")) return j;
+      last = j;
+    } catch (e){ last = { ok:false, error:"Cannot reach the server." }; }
   }
+  return last;
 }
 
+let reAttempts = 0, reTimer = 0;
 function connect(){
   if (net.es) net.es.close();
   const es = new EventSource("/api/stream?code=" + net.code + "&pid=" + net.pid);
@@ -228,8 +239,18 @@ function connect(){
   es.addEventListener("lobby",  e => onLobby(JSON.parse(e.data)));
   es.addEventListener("init",   e => onInit(JSON.parse(e.data)));
   es.addEventListener("state",  e => onState(JSON.parse(e.data)));
-  es.onopen  = () => { net.ok = true; paintHud(); };
-  es.onerror = () => { net.ok = false; paintHud(); };
+  es.onopen  = () => { net.ok = true; reAttempts = 0; paintHud(); };
+  es.onerror = () => {
+    net.ok = false; paintHud();
+    /* EventSource retries transient drops itself, but gives up on a hard close
+       — routed to an instance without the room, or a redeploy. Re-open a few
+       times; a fresh connection may land on the right instance. */
+    if (es.readyState === 2 && net.code && reAttempts < 12){
+      reAttempts++;
+      clearTimeout(reTimer);
+      reTimer = setTimeout(() => { if (net.es === es && net.code) connect(); }, Math.min(3000, 400 * reAttempts));
+    }
+  };
 }
 
 function onLobby(d){
@@ -657,6 +678,7 @@ function remember(){
 function enterRoom(code, pid, own){
   net.code = code; net.pid = pid;
   net.owner = own !== false;
+  reAttempts = 0;
   remember();
   const url = location.pathname + "?r=" + code;
   history.replaceState(null, "", url);

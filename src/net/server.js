@@ -64,6 +64,50 @@ setInterval(() => {
   for (const [ip, h] of hits) if (h.t < cutoff) hits.delete(ip);
 }, 30000).unref();
 
+/* ── multi-machine room affinity via Fly-Replay ──────────────────────────────
+   Rooms live in one process's memory. If the app ever runs on more than one
+   machine, a request can land on an instance that doesn't hold the room. When
+   that happens we ask Fly's proxy to replay the request on another instance,
+   walking the peer list (via Fly internal DNS) until the owner is found. This
+   is entirely inert off Fly (FLY_MACHINE_ID unset), so local runs and the test
+   suite behave exactly as before. */
+const dns = require('dns').promises;
+const MACHINE = process.env.FLY_MACHINE_ID || "";
+const NEEDS_ROOM = new Set(["join", "name", "start", "restart", "send", "leave"]);
+let peers = [], peersAt = 0;
+async function getPeers(){
+  if (!MACHINE) return [];
+  if (Date.now() - peersAt < 10000) return peers;
+  try {
+    const txt = await dns.resolveTxt("_instances.internal");
+    const ids = new Set();
+    for (const rec of txt){
+      const m = /instance=([0-9a-zA-Z]+)/.exec(rec.join(""));
+      if (m) ids.add(m[1]);
+    }
+    ids.delete(MACHINE);
+    peers = [...ids]; peersAt = Date.now();
+  } catch (e){ /* not on Fly / DNS unavailable → no peers, no replay */ }
+  return peers;
+}
+function triedSet(req){
+  const m = /state=([^;]*)/.exec(String(req.headers["fly-replay-src"] || ""));
+  const s = new Set((m ? decodeURIComponent(m[1]) : "").split(",").filter(Boolean));
+  s.add(MACHINE);
+  return s;
+}
+async function replayElsewhere(req, res){
+  if (!MACHINE) return false;
+  const tried = triedSet(req);
+  for (const p of await getPeers()){
+    if (tried.has(p)) continue;
+    res.writeHead(200, { "fly-replay": "instance=" + p + ";state=" + encodeURIComponent([...tried].join(",")) });
+    res.end();
+    return true;
+  }
+  return false;
+}
+
 function handleCmd(body){
   const action = body.action;
 
@@ -155,6 +199,9 @@ const server = http.createServer(async (req, res) => {
     const body = await readBody(req);
     if (rateLimited(ipOf(req), body.action))
       return json(res, 429, { ok:false, error:"Slow down a moment." });
+    if (NEEDS_ROOM.has(body.action) &&
+        !rooms.has(String(body.code || "").toUpperCase().trim()) &&
+        await replayElsewhere(req, res)) return;
     let out;
     try { out = handleCmd(body); }
     catch (e){ console.error(e); out = { ok:false, error:"Server error." }; }
@@ -164,7 +211,10 @@ const server = http.createServer(async (req, res) => {
   if (u.pathname === "/api/stream"){
     const room = rooms.get(String(u.searchParams.get("code") || "").toUpperCase());
     const pid  = String(u.searchParams.get("pid") || "");
-    if (!room || !room.players.has(pid)) return json(res, 404, { error:"gone" });
+    if (!room || !room.players.has(pid)){
+      if (await replayElsewhere(req, res)) return;
+      return json(res, 404, { error:"gone" });
+    }
     const p = room.players.get(pid);
 
     res.writeHead(200, {
