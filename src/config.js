@@ -32,5 +32,6 @@ module.exports = {
   NET_EVERY: 3,                    /* broadcast every 3rd tick → 10 Hz      */
 
   ROOM_IDLE_MS:  10 * 60 * 1000,   /* empty rooms are swept after this      */
-  LOBBY_TIMEOUT: 60 * 60 * 1000
+  LOBBY_TIMEOUT: 60 * 60 * 1000,
+  MATCH_CAP:     15 * 60           /* seconds — the leader takes a stalemate */
 };

@@ -189,7 +189,7 @@ const $   = id => document.getElementById(id);
 /* ══════════════════════════════════════════════════════════════
    State
    ══════════════════════════════════════════════════════════════ */
-const net = { code:null, pid:null, seat:null, host:false, phase:"menu", roster:[], es:null, ok:true };
+const net = { code:null, pid:null, seat:null, host:false, phase:"menu", roster:[], es:null, ok:true, owner:false };
 const G = {
   nodes: [],        /* {x,y,r,tier,home,owner,count,pulse,flash} */
   links: [],
@@ -623,20 +623,49 @@ function showOver(){
 /* ══════════════════════════════════════════════════════════════
    Joining and hosting
    ══════════════════════════════════════════════════════════════ */
+/* Per-tab id so a second tab never fights the first over the same seat. */
+let tabId = "";
+try { tabId = sessionStorage.getItem("holdings.tab") || ""; } catch (e){}
+if (!tabId){
+  tabId = Math.random().toString(36).slice(2);
+  try { sessionStorage.setItem("holdings.tab", tabId); } catch (e){}
+}
+const HOLD_FRESH = 15000;   /* a tab heartbeating within this window still owns its seat */
+
+function loadSaved(){
+  try { return JSON.parse(localStorage.getItem("holdings") || "null"); } catch (e){ return null; }
+}
+/* the pid we may reclaim for `code` — ours across a refresh, or one a closed
+   tab left behind. null while another live tab is holding that seat. */
+function resumablePid(code){
+  const s = loadSaved();
+  if (!s || s.code !== code) return null;
+  if (s.tab === tabId || Date.now() - (s.ts || 0) > HOLD_FRESH) return s.pid;
+  return null;
+}
+function otherTabHolds(code){
+  const s = loadSaved();
+  return !!(s && s.code === code && s.tab !== tabId && Date.now() - (s.ts || 0) < HOLD_FRESH);
+}
+
 function remember(){
   try {
-    sessionStorage.setItem("holdings", JSON.stringify({ code:net.code, pid:net.pid }));
+    if (net.owner) localStorage.setItem("holdings",
+      JSON.stringify({ code:net.code, pid:net.pid, tab:tabId, ts:Date.now() }));
     localStorage.setItem("holdings.name", $("name").value.trim());
   } catch (e){}
 }
-function enterRoom(code, pid){
+function enterRoom(code, pid, own){
   net.code = code; net.pid = pid;
+  net.owner = own !== false;
   remember();
   const url = location.pathname + "?r=" + code;
   history.replaceState(null, "", url);
   connect();
   paintHud();
 }
+/* keep our claim fresh so a duplicate tab can tell we are still here */
+setInterval(() => { if (net.owner && net.code) remember(); }, 5000);
 
 $("btnCreate").addEventListener("click", async () => {
   $("menuErr").textContent = "";
@@ -655,14 +684,11 @@ async function doJoin(raw){
   const code = String(raw || "").toUpperCase().trim();
   $("menuErr").textContent = "";
   if (code.length !== 4) return ($("menuErr").textContent = "Room codes are four characters.");
-  let prev = {};
-  try { prev = JSON.parse(sessionStorage.getItem("holdings") || "{}"); } catch (e){}
-  const r = await api("join", {
-    code, pid: prev.code === code ? prev.pid : null,
-    name: $("name").value.trim()
-  });
+  const pid = resumablePid(code);
+  const r = await api("join", { code, pid, name: $("name").value.trim() });
   if (!r.ok) return ($("menuErr").textContent = r.error || "Could not join.");
-  enterRoom(r.code, r.pid);
+  /* own the saved slot if we reclaimed our seat, or no other tab holds it */
+  enterRoom(r.code, r.pid, !!pid || !otherTabHolds(code));
 }
 
 $("btnStart").addEventListener("click", () => api("start"));
@@ -683,8 +709,8 @@ $("btnCopy").addEventListener("click", async () => {
 $("leave").addEventListener("click", () => {
   api("leave");
   if (net.es) net.es.close();
-  try { sessionStorage.removeItem("holdings"); } catch (e){}
-  net.code = net.pid = null; net.seat = null; net.phase = "menu"; net.roster = [];
+  if (net.owner) try { localStorage.removeItem("holdings"); } catch (e){}
+  net.code = net.pid = null; net.seat = null; net.phase = "menu"; net.roster = []; net.owner = false;
   G.nodes = []; G.links = []; G.flights.clear(); pending = []; view = { c:[], ghosts:[] };
   history.replaceState(null, "", location.pathname);
   paintHud();
@@ -718,8 +744,6 @@ paintHud();
 
 try { $("name").value = localStorage.getItem("holdings.name") || ""; } catch (e){}
 const wanted = new URLSearchParams(location.search).get("r");
-let resumed = null;
-try { resumed = JSON.parse(sessionStorage.getItem("holdings") || "null"); } catch (e){}
 
 if (wanted){
   /* arrived on someone's invite link — joining is the point, so it leads */
@@ -733,11 +757,14 @@ if (wanted){
   $("orRow").textContent = "or";
   $("p-menu").insertBefore($("joinRow"), $("btnCreate"));
   $("p-menu").insertBefore($("orRow"),   $("btnCreate"));
-  if (resumed && resumed.code === c) doJoin(c);
+  if (resumablePid(c)) doJoin(c);
   else $("name").focus();
-} else if (resumed && resumed.code){
-  $("code").value = resumed.code;
-  doJoin(resumed.code);
+} else {
+  const s = loadSaved();
+  if (s && s.code && resumablePid(s.code)){
+    $("code").value = s.code;
+    doJoin(s.code);
+  }
 }
 
 let last = performance.now();

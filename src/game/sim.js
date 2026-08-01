@@ -1,5 +1,5 @@
 'use strict';
-const { SEATS, SEND_FRACTION, TROOP_SPEED, TROOP_GAP } = require('../config');
+const { SEATS, SEND_FRACTION, TROOP_SPEED, TROOP_GAP, MATCH_CAP } = require('../config');
 const { dist } = require('./map');
 const { isBot } = require('./rooms');
 const { broadcastLobby } = require('../net/protocol');
@@ -142,6 +142,18 @@ function step(room, dt){
   if (owners.size === 1 && !owners.has(null) && room.flights.length === 0){
     room.phase = "over";
     room.winner = [...owners][0];
+    broadcastLobby(room);
+  } else if (room.elapsed >= MATCH_CAP){
+    /* a stalemate can't drag on forever — the largest holding takes the map,
+       with the most troops breaking a tie */
+    const held = new Array(SEATS).fill(0), troops = new Array(SEATS).fill(0);
+    for (const n of room.nodes) if (n.owner !== null){ held[n.owner]++; troops[n.owner] += n.count; }
+    let win = 0;
+    for (let s = 1; s < SEATS; s++){
+      if (held[s] > held[win] || (held[s] === held[win] && troops[s] > troops[win])) win = s;
+    }
+    room.phase = "over";
+    room.winner = win;
     broadcastLobby(room);
   }
 }
