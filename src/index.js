@@ -16,8 +16,19 @@
 const { PORT } = require('./config');
 const { server } = require('./net/server');
 const { sweep }  = require('./game/loop');
+const { rooms }  = require('./game/rooms');
 
 setInterval(sweep, 60000);
+
+/* a heartbeat in the logs — enough to spot a room or memory leak */
+setInterval(() => {
+  let players = 0, connected = 0;
+  for (const room of rooms.values()) for (const p of room.players.values()){ players++; if (p.live) connected++; }
+  console.log('[stats] rooms=' + rooms.size + ' players=' + players +
+              ' connected=' + connected +
+              ' rss=' + Math.round(process.memoryUsage().rss / 1048576) + 'MB' +
+              ' uptime=' + Math.round(process.uptime()) + 's');
+}, 10 * 60 * 1000);
 
 server.listen(PORT, () => {
   console.log('Holdings running \u2192 http://localhost:' + PORT);

@@ -196,6 +196,21 @@ const server = http.createServer(async (req, res) => {
     return json(res, 200, { rooms: rooms.size });
   }
 
+  if (u.pathname === "/api/stats"){
+    let liveRooms = 0, players = 0, connected = 0, matches = 0;
+    for (const room of rooms.values()){
+      let any = false;
+      for (const p of room.players.values()){ players++; if (p.live){ connected++; any = true; } }
+      if (any) liveRooms++;
+      if (room.phase === "live") matches++;
+    }
+    return json(res, 200, {
+      rooms: rooms.size, liveRooms, matches, players, connected,
+      uptime: Math.round(process.uptime()),
+      rssMB: Math.round(process.memoryUsage().rss / 1048576)
+    });
+  }
+
   if (req.method !== "GET") return json(res, 405, { error:"method" });
   serveStatic(req, res, u.pathname === "/" ? "/" : u.pathname);
 });
