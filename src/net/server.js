@@ -3,7 +3,7 @@ const http = require('http');
 const fs   = require('fs');
 const path = require('path');
 
-const { PUBDIR, SEATS } = require('../config');
+const { PUBDIR, SEATS, MAX_ROOMS } = require('../config');
 const { rooms, newId, makeRoom, seatOf, assignSeats } = require('../game/rooms');
 const { generate } = require('../game/map');
 const { send } = require('../game/sim');
@@ -43,10 +43,32 @@ function readBody(req){
 
 const clean = s => String(s || "").replace(/[^\p{L}\p{N} '._-]/gu, "").trim().slice(0, 18);
 
+/* ── crude per-IP rate limiting: blunts command floods and create-spam ── */
+const RL_WINDOW = 10000, RL_MAX = 40, RL_CREATE_MAX = 6;
+const hits = new Map();                         /* ip -> { t, n, c } */
+function ipOf(req){
+  return (req.headers["fly-client-ip"] ||
+          String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() ||
+          (req.socket && req.socket.remoteAddress) || "?");
+}
+function rateLimited(ip, action){
+  const now = Date.now();
+  let h = hits.get(ip);
+  if (!h || now - h.t > RL_WINDOW){ h = { t: now, n: 0, c: 0 }; hits.set(ip, h); }
+  h.n++;
+  if (action === "create") h.c++;
+  return h.n > RL_MAX || (action === "create" && h.c > RL_CREATE_MAX);
+}
+setInterval(() => {
+  const cutoff = Date.now() - RL_WINDOW;
+  for (const [ip, h] of hits) if (h.t < cutoff) hits.delete(ip);
+}, 30000).unref();
+
 function handleCmd(body){
   const action = body.action;
 
   if (action === "create"){
+    if (rooms.size >= MAX_ROOMS) return { ok:false, error:"Server is busy — try again in a moment." };
     const room = makeRoom();
     const pid = newId();
     room.players.set(pid, { pid, name: clean(body.name) || "Player", seat:null, live:false, res:null, ack:0 });
@@ -131,6 +153,8 @@ const server = http.createServer(async (req, res) => {
 
   if (u.pathname === "/api/cmd" && req.method === "POST"){
     const body = await readBody(req);
+    if (rateLimited(ipOf(req), body.action))
+      return json(res, 429, { ok:false, error:"Slow down a moment." });
     let out;
     try { out = handleCmd(body); }
     catch (e){ console.error(e); out = { ok:false, error:"Server error." }; }

@@ -14,7 +14,9 @@ module.exports = {
 
   W: 1000,
   H: 640,
-  NODE_COUNT: 30,
+  NODE_COUNT: 30,                  /* base board — scales up with seated players */
+  NODE_PER_PLAYER: 3,              /* extra capturable nodes per seated human     */
+  NODE_MAX: 45,                    /* ceiling that still fits the 1000x640 board  */
   SEATS: 5,                        /* five factions on the map              */
 
   TIER: {
@@ -33,5 +35,6 @@ module.exports = {
 
   ROOM_IDLE_MS:  10 * 60 * 1000,   /* empty rooms are swept after this      */
   LOBBY_TIMEOUT: 60 * 60 * 1000,
-  MATCH_CAP:     15 * 60           /* seconds — the leader takes a stalemate */
+  MATCH_CAP:     15 * 60,          /* seconds — the leader takes a stalemate */
+  MAX_ROOMS:     500               /* hard ceiling on live rooms (DoS guard) */
 };

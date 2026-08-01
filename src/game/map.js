@@ -1,5 +1,5 @@
 'use strict';
-const { W, H, NODE_COUNT, SEATS, TIER, HOME } = require('../config');
+const { W, H, NODE_COUNT, NODE_PER_PLAYER, NODE_MAX, SEATS, TIER, HOME } = require('../config');
 
 /* ══════════════════════════════════════════════════════════════════════════
    Map generation
@@ -17,10 +17,18 @@ function generate(room){
   const rr = (a, b) => a + rnd() * (b - a);
   const ri = (a, b) => a + ((rnd() * (b - a + 1)) | 0);
 
+  /* more seated players → more nodes to fight over, so nobody runs out of
+     things to capture. Empty/AI-only boards keep the tuned base count. */
+  const seated = [...room.players.values()].filter(p => p.seat !== null).length;
+  const count = Math.min(NODE_MAX, NODE_COUNT + NODE_PER_PLAYER * seated);
+
   const nodes = [];
-  const PAD = 70, MIN_D = 92;
+  const PAD = 70;
+  /* hold node density roughly constant as the count grows, so a bigger board
+     never gets impossible to place or too cramped to read */
+  const MIN_D = Math.max(66, Math.min(92, Math.round(0.78 * Math.sqrt((W - 2 * PAD) * (H - 2 * PAD) / count))));
   let guard = 0;
-  while (nodes.length < NODE_COUNT && guard++ < 40000){
+  while (nodes.length < count && guard++ < 40000){
     const x = rr(PAD, W - PAD), y = rr(PAD, H - PAD);
     let ok = true;
     for (const n of nodes) if (Math.hypot(n.x - x, n.y - y) < MIN_D){ ok = false; break; }
@@ -57,8 +65,10 @@ function generate(room){
     n._score = min * 2 + sum * 0.1;
   }
   free.sort((a, b) => b._score - a._score);
+  const nMajor = Math.round(free.length * 0.24);   /* ≈ 6 of 25 at the base count */
+  const nHold  = Math.round(free.length * 0.36);   /* ≈ 9 of 25 at the base count */
   free.forEach((n, i) => {
-    n.tier = i < 6 ? 2 : i < 15 ? 1 : 0;
+    n.tier = i < nMajor ? 2 : i < nMajor + nHold ? 1 : 0;
     const t = TIER[n.tier];
     n.r = t.r; n.growth = t.growth; n.cap = t.cap;
     n.count = ri(t.start[0], t.start[1]);

@@ -22,3 +22,13 @@ setInterval(sweep, 60000);
 server.listen(PORT, () => {
   console.log('Holdings running \u2192 http://localhost:' + PORT);
 });
+
+/* Fly sends SIGTERM on every deploy. Stop taking new connections and exit
+   cleanly; in-memory matches still end (that is the single-process design). */
+function shutdown(sig){
+  console.log('Holdings shutting down (' + sig + ')');
+  server.close(() => process.exit(0));
+  setTimeout(() => process.exit(0), 3000).unref();
+}
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT',  () => shutdown('SIGINT'));

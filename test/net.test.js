@@ -2,7 +2,10 @@
    a disconnect, and a rejoin. Boots the server on a spare port. */
 'use strict';
 const { server } = require("../src/net/server");
+const { NODE_COUNT, NODE_PER_PLAYER, NODE_MAX } = require("../src/config");
 const PORT = 8177, BASE = "http://127.0.0.1:" + PORT;
+/* two players take seats before the match starts, so the board scales to this */
+const EXPECT = Math.min(NODE_MAX, NODE_COUNT + NODE_PER_PLAYER * 2);
 
 const post = body => fetch(BASE + "/api/cmd", {
   method:"POST", headers:{ "content-type":"application/json" }, body: JSON.stringify(body)
@@ -55,12 +58,12 @@ const check = (label, ok, detail) => {
 
   await post({ action:"start", code:A.code, pid:A.pid });
   await wait(600);
-  check("map delivered once", log.B.init && log.B.init.nodes.length === 30);
-  check("snapshots flowing", !!log.B.state && log.B.state.n.length === 60);
+  check("map delivered once", log.B.init && log.B.init.nodes.length === EXPECT, EXPECT + " nodes");
+  check("snapshots flowing", !!log.B.state && log.B.state.n.length === EXPECT * 2);
 
   const st = log.B.state, seat = log.B.init.seat;
   const mine = [], theirs = [];
-  for (let i = 0; i < 30; i++) (st.n[i*2] === seat ? mine : theirs).push(i);
+  for (let i = 0; i < EXPECT; i++) (st.n[i*2] === seat ? mine : theirs).push(i);
   const src = mine[0];
   let tgt = theirs[0], best = Infinity;
   for (const t of theirs){
