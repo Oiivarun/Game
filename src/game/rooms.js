@@ -32,6 +32,7 @@ function makeRoom(){
     nodes: [], links: [], flights: [],
     nextFlight: 1,
     elapsed: 0,
+    goLiveAt: 0,             /* when a countdown flips the room to live      */
     winner: undefined,
     aiClock: new Array(SEATS).fill(0),
     tickN: 0,

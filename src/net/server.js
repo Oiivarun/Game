@@ -3,7 +3,7 @@ const http = require('http');
 const fs   = require('fs');
 const path = require('path');
 
-const { PUBDIR, SEATS, MAX_ROOMS } = require('../config');
+const { PUBDIR, SEATS, MAX_ROOMS, COUNTDOWN_MS } = require('../config');
 const { rooms, newId, makeRoom, seatOf, assignSeats } = require('../game/rooms');
 const { generate } = require('../game/map');
 const { send } = require('../game/sim');
@@ -73,7 +73,7 @@ setInterval(() => {
    suite behave exactly as before. */
 const dns = require('dns').promises;
 const MACHINE = process.env.FLY_MACHINE_ID || "";
-const NEEDS_ROOM = new Set(["join", "name", "start", "restart", "send", "leave"]);
+const NEEDS_ROOM = new Set(["join", "name", "ready", "start", "restart", "send", "leave"]);
 let peers = [], peersAt = 0;
 async function getPeers(){
   if (!MACHINE) return [];
@@ -115,7 +115,7 @@ function handleCmd(body){
     if (rooms.size >= MAX_ROOMS) return { ok:false, error:"Server is busy — try again in a moment." };
     const room = makeRoom();
     const pid = newId();
-    room.players.set(pid, { pid, name: clean(body.name) || "Player", seat:null, live:false, res:null, ack:0 });
+    room.players.set(pid, { pid, name: clean(body.name) || "Player", seat:null, live:false, res:null, ack:0, execCid:0, ready:false });
     room.order.push(pid);
     room.hostPid = pid;
     assignSeats(room);
@@ -134,7 +134,7 @@ function handleCmd(body){
       return { ok:true, code: room.code, pid };
     }
     pid = newId();
-    room.players.set(pid, { pid, name: clean(body.name) || "Player", seat:null, live:false, res:null, ack:0 });
+    room.players.set(pid, { pid, name: clean(body.name) || "Player", seat:null, live:false, res:null, ack:0, execCid:0, ready:false });
     room.order.push(pid);
     if (room.phase === "lobby") assignSeats(room);
     if (!room.hostPid) room.hostPid = pid;
@@ -154,13 +154,21 @@ function handleCmd(body){
     return { ok:true };
   }
 
+  if (action === "ready"){
+    me.ready = body.ready === undefined ? !me.ready : !!body.ready;
+    broadcastLobby(room);
+    return { ok:true, ready: me.ready };
+  }
+
   if (action === "start" || action === "restart"){
     if (me.pid !== room.hostPid) return { ok:false, error:"Only the host can start." };
     room.seed = (Math.random() * 1e9) | 0;
     assignSeats(room);
     generate(room);
-    room.phase = "live";
-    for (const p of room.players.values()) p.ack = 0;
+    /* open with a shared countdown; loop.tick flips everyone to live together */
+    room.phase = "countdown";
+    room.goLiveAt = Date.now() + COUNTDOWN_MS;
+    for (const p of room.players.values()){ p.ack = 0; p.execCid = 0; }
     broadcastLobby(room);
     broadcastInit(room);
     broadcastState(room);
@@ -170,9 +178,14 @@ function handleCmd(body){
   if (action === "send"){
     /* acknowledge even the orders we drop — an unacknowledged command
        leaves a predicted column stranded on that client's screen */
-    me.ack = Math.max(me.ack, body.cid | 0);
+    const cid = body.cid | 0;
+    me.ack = Math.max(me.ack, cid);
     const seat = seatOf(room, me.pid);
     if (room.phase !== "live" || seat === null) return { ok:true };
+    /* idempotent: a retried or duplicated order (same or older id) is ignored,
+       so troops are never sent twice */
+    if (cid <= me.execCid) return { ok:true };
+    me.execCid = cid;
     const to = body.to | 0;
     const from = Array.isArray(body.from) ? body.from : [];
     if (room.nodes[to]){

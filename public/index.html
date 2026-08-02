@@ -7,106 +7,156 @@
 <!-- system fonts only — no external requests (privacy + reliability) -->
 
 <style>
+:root{
+  --bg:#07080A; --ink:#F3F5F8;
+  --muted:rgba(243,245,248,.56); --faint:rgba(243,245,248,.34); --ghost:rgba(243,245,248,.20);
+  --line:rgba(255,255,255,.09); --line-2:rgba(255,255,255,.16);
+  --card:rgba(20,22,27,.72); --field:rgba(255,255,255,.055);
+  --accent:#3ED6C0; --accent-ink:#052722; --danger:#FF5A6E; --warn:#FFC53D;
+  --r:16px;
+}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;overflow:hidden;-webkit-tap-highlight-color:transparent}
 body{
-  background:#080A0D;color:#E8EBEF;
-  font-family:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
-  -webkit-font-smoothing:antialiased;
-  display:flex;align-items:center;justify-content:center;
-  padding:16px;
+  background:
+    radial-gradient(1100px 620px at 50% -10%, rgba(62,214,192,.06), transparent 60%),
+    radial-gradient(900px 700px at 90% 110%, rgba(185,140,255,.05), transparent 55%),
+    var(--bg);
+  color:var(--ink);
+  font-family:system-ui,-apple-system,'SF Pro Text','Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+  display:flex;align-items:center;justify-content:center;padding:18px;
 }
-.shell{width:100%;max-width:1000px;display:flex;flex-direction:column;gap:10px}
+.shell{width:100%;max-width:1000px;display:flex;flex-direction:column;gap:12px}
 
 /* ── top bar ── */
-.hud{display:flex;align-items:center;gap:14px}
-.title{font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(232,235,239,.4);white-space:nowrap}
-.title b{color:rgba(232,235,239,.78);font-weight:600;letter-spacing:.2em}
-.share{
-  flex:1;display:flex;height:7px;border-radius:4px;overflow:hidden;
-  background:rgba(255,255,255,.07);min-width:60px;
-}
-.share i{display:block;height:100%;transition:width .4s cubic-bezier(.3,1,.4,1)}
-.timer{font-size:12px;font-weight:500;color:rgba(232,235,239,.45);font-variant-numeric:tabular-nums;min-width:44px;text-align:right}
+.hud{display:flex;align-items:center;gap:14px;padding:0 2px;height:26px}
+.brand{font-size:13px;font-weight:600;letter-spacing:-.01em;color:var(--faint);white-space:nowrap}
+.brand b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.share{flex:1;display:flex;height:6px;border-radius:6px;overflow:hidden;background:rgba(255,255,255,.06);min-width:60px}
+.share i{display:block;height:100%;transition:width .45s cubic-bezier(.3,1,.4,1)}
+.timer{font-size:13px;font-weight:500;color:var(--faint);font-variant-numeric:tabular-nums;min-width:42px;text-align:right}
 
 /* ── board ── */
-.board{position:relative;border-radius:16px;overflow:hidden;background:#0B0E12;border:1px solid rgba(255,255,255,.07)}
+.board{
+  position:relative;border-radius:22px;overflow:hidden;
+  background:linear-gradient(180deg,#0C0F14,#090B0F);
+  border:1px solid var(--line);
+  box-shadow:0 30px 80px -40px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.04);
+}
 canvas{display:block;width:100%;height:auto;touch-action:none;cursor:crosshair}
 
-.overlay{
-  position:absolute;inset:0;display:none;place-items:center;
-  background:rgba(8,10,13,.88);backdrop-filter:blur(3px);
+/* ── countdown over the board ── */
+.count{
+  position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;
+  gap:6px;pointer-events:none;background:rgba(7,8,10,.42);backdrop-filter:blur(2px);z-index:2;
 }
+.count.on{display:flex}
+.count-num{font-size:150px;font-weight:700;letter-spacing:-.04em;line-height:1;color:var(--ink);
+  text-shadow:0 20px 60px rgba(0,0,0,.6)}
+.count-num.pop{animation:cdpop .42s cubic-bezier(.2,.9,.3,1)}
+@keyframes cdpop{from{transform:scale(1.35);opacity:0}to{transform:scale(1);opacity:1}}
+.count-sub{font-size:14px;font-weight:500;letter-spacing:.02em;color:var(--muted)}
+
+/* ── overlay + panels ── */
+.overlay{position:absolute;inset:0;display:none;place-items:center;padding:20px;
+  background:rgba(7,8,10,.6);backdrop-filter:blur(14px) saturate(1.1);z-index:3}
 .overlay.on{display:grid}
-.panel{display:none;text-align:center;padding:26px;width:100%;max-width:430px}
+.panel{
+  display:none;width:100%;max-width:392px;padding:30px 28px;
+  background:var(--card);border:1px solid var(--line-2);border-radius:22px;
+  box-shadow:0 40px 90px -30px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,.05);
+  animation:rise .32s cubic-bezier(.2,.9,.3,1);
+}
 .panel.on{display:block}
-.panel h2{font-size:30px;font-weight:700;letter-spacing:-.03em;margin:0 0 8px}
-.panel p{margin:0 0 20px;font-size:13.5px;color:rgba(232,235,239,.55);line-height:1.6}
-.err{color:#FF5A6E;font-size:12.5px;min-height:17px;margin:0 0 10px}
+@keyframes rise{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:none}}
 
-button{
-  font-family:inherit;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
-  background:#E8EBEF;color:#0B0E12;border:0;border-radius:9px;padding:11px 22px;cursor:pointer;
-}
-button:hover{filter:brightness(.93)}
-button:disabled{opacity:.4;cursor:default;filter:none}
-button.mini{
-  font-size:10.5px;font-weight:500;letter-spacing:.1em;padding:6px 12px;border-radius:7px;
-  background:none;color:rgba(232,235,239,.45);border:1px solid rgba(255,255,255,.13);
-  transition:color .15s,border-color .15s;
-}
-button.mini:hover{color:#E8EBEF;border-color:rgba(255,255,255,.3);filter:none}
-button.mini.armed{color:#FF5A6E;border-color:rgba(255,90,110,.55)}
-button.ghost{background:none;color:rgba(232,235,239,.6);border:1px solid rgba(255,255,255,.16)}
-button.ghost:hover{color:#E8EBEF;border-color:rgba(255,255,255,.34);filter:none}
+.logo{font-size:30px;font-weight:700;letter-spacing:-.03em;margin:0 0 6px;text-align:center}
+.tag{margin:0 0 22px;font-size:14px;color:var(--muted);line-height:1.5;text-align:center}
+.panel h2{font-size:26px;font-weight:700;letter-spacing:-.025em;margin:0 0 8px;text-align:center}
+.panel .lead{margin:0 0 22px;font-size:14px;color:var(--muted);line-height:1.5;text-align:center}
+.err{color:var(--danger);font-size:13px;min-height:18px;margin:12px 0 0;text-align:center}
+.how{margin:20px 0 0;font-size:12px;line-height:1.55;color:var(--faint);text-align:center}
 
-input{
-  font-family:inherit;font-size:14px;font-weight:500;color:#E8EBEF;
-  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);
-  border-radius:9px;padding:11px 14px;width:100%;outline:none;
+/* ── controls ── */
+.btn{
+  display:block;width:100%;font-family:inherit;font-size:15px;font-weight:590;letter-spacing:-.01em;
+  border:1px solid transparent;border-radius:13px;padding:13px 18px;cursor:pointer;
+  transition:transform .12s ease, background .15s, border-color .15s, color .15s, opacity .15s;
 }
-input:focus{border-color:rgba(62,214,192,.55)}
-input::placeholder{color:rgba(232,235,239,.28)}
-#code{text-transform:uppercase;letter-spacing:.34em;text-align:center;font-weight:600}
+.btn+.btn{margin-top:9px}
+.btn:active{transform:scale(.985)}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.primary{background:var(--accent);color:var(--accent-ink);box-shadow:0 8px 24px -10px rgba(62,214,192,.7)}
+.btn.primary:hover{background:#4fe0cb}
+.btn.tinted{background:rgba(255,255,255,.08);color:var(--ink);border-color:var(--line-2)}
+.btn.tinted:hover{background:rgba(255,255,255,.12)}
+.btn.ghost{background:transparent;color:var(--muted);border-color:var(--line-2)}
+.btn.ghost:hover{color:var(--ink);border-color:rgba(255,255,255,.3)}
+.btn.ready-on{background:rgba(62,214,192,.16);color:var(--accent);border-color:rgba(62,214,192,.5)}
 
-.row{display:flex;gap:8px;margin-bottom:10px}
-.row input{flex:1}
-.or{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:rgba(232,235,239,.25);margin:16px 0 12px}
-
-.bigcode{
-  font-size:44px;font-weight:700;letter-spacing:.22em;margin:0 0 2px;padding-left:.22em;
-  color:#3ED6C0;
+.field{
+  font-family:inherit;font-size:15px;font-weight:500;color:var(--ink);
+  background:var(--field);border:1px solid var(--line-2);border-radius:13px;
+  padding:13px 15px;width:100%;outline:none;transition:border-color .15s, background .15s;
 }
-.sub{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:rgba(232,235,239,.35);margin:0 0 18px}
+.field:focus{border-color:rgba(62,214,192,.6);background:rgba(255,255,255,.07)}
+.field::placeholder{color:var(--ghost)}
+#name{margin-bottom:14px}
+.join{display:flex;gap:8px}
+.join .field{flex:1}
+.join .btn{width:auto;padding:13px 20px}
+#code{text-transform:uppercase;letter-spacing:.3em;text-align:center;font-weight:600}
 
-.seats{display:flex;flex-direction:column;gap:6px;margin:0 0 18px;text-align:left}
-.seat{
-  display:flex;align-items:center;gap:9px;padding:8px 12px;border-radius:9px;
-  background:rgba(255,255,255,.035);font-size:13px;
+.divider{display:flex;align-items:center;gap:12px;margin:18px 0 14px;color:var(--faint);
+  font-size:12px;letter-spacing:.01em}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
+
+/* ── lobby ── */
+.code-badge{
+  font-size:44px;font-weight:700;letter-spacing:.16em;padding-left:.16em;text-align:center;
+  color:var(--accent);margin:0 0 4px;cursor:pointer;
 }
-.seat .dot{width:9px;height:9px;border-radius:50%;flex:none}
+.sub{font-size:12px;color:var(--faint);text-align:center;margin:0 0 20px}
+.seats{display:flex;flex-direction:column;gap:7px;margin:0 0 18px;text-align:left}
+.seat{display:flex;align-items:center;gap:11px;padding:10px 13px;border-radius:12px;
+  background:rgba(255,255,255,.04);border:1px solid transparent;font-size:14px}
+.seat.mine{border-color:var(--line-2);background:rgba(255,255,255,.06)}
+.seat .dot{width:10px;height:10px;border-radius:50%;flex:none;box-shadow:0 0 10px -1px currentColor}
 .seat .who{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.seat .tag{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:rgba(232,235,239,.35)}
+.seat .badge{font-size:11px;font-weight:600;letter-spacing:.01em;color:var(--faint);white-space:nowrap}
+.seat .badge.on{color:var(--accent)}
+.seat .badge.away{color:var(--warn)}
 .seat.empty{opacity:.5}
+.lobby-foot{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:16px}
+.waitMsg{font-size:12px;color:var(--faint);text-align:center;min-height:15px}
 
-.legend{display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-size:11.5px;color:rgba(232,235,239,.45)}
-.legend .p{display:flex;align-items:center;gap:6px}
+/* ── legend ── */
+.legend{display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--muted);padding:0 2px}
+.legend .p{display:flex;align-items:center;gap:7px}
 .legend .dot{width:8px;height:8px;border-radius:50%}
-.legend .n{font-variant-numeric:tabular-nums;color:rgba(232,235,239,.72);font-weight:500}
-.legend .me{color:rgba(232,235,239,.9)}
-.hint{margin-left:auto;color:rgba(232,235,239,.3)}
-.warn{color:#FFC53D}
+.legend .n{font-variant-numeric:tabular-nums;color:var(--muted);font-weight:500}
+.legend .me{color:var(--ink);font-weight:600}
+.hint{margin-left:auto;color:var(--faint)}
+.hint.warn{color:var(--warn)}
+
+/* ── mini buttons ── */
+.mini{font-family:inherit;font-size:12px;font-weight:500;letter-spacing:-.01em;padding:6px 13px;border-radius:9px;
+  background:transparent;color:var(--faint);border:1px solid var(--line-2);cursor:pointer;
+  transition:color .15s,border-color .15s,background .15s}
+.mini:hover{color:var(--ink);border-color:rgba(255,255,255,.3)}
+.mini.armed{color:var(--danger);border-color:rgba(255,90,110,.55)}
 
 @media (max-width:620px){
-  .panel h2{font-size:24px}
-  .bigcode{font-size:34px}
-  .title{font-size:10px}
+  .logo{font-size:26px}.panel h2{font-size:22px}
+  .code-badge{font-size:36px}.count-num{font-size:104px}
+  .panel{padding:26px 22px}
 }
 </style>
 
 <div class="shell">
   <div class="hud">
-    <span class="title" id="hudTitle">Holdings</span>
+    <span class="brand" id="hudTitle">Holdings</span>
     <div class="share" id="share"></div>
     <span class="timer" id="timer">0:00</span>
     <button class="mini" id="restart" type="button" style="display:none">Restart</button>
@@ -116,40 +166,50 @@ input::placeholder{color:rgba(232,235,239,.28)}
   <div class="board" id="board">
     <canvas id="game" width="1000" height="640"></canvas>
 
+    <div class="count" id="count">
+      <div class="count-num" id="countNum">3</div>
+      <div class="count-sub" id="countSub">Get ready</div>
+    </div>
+
     <div class="overlay on" id="ov">
 
       <!-- ── menu ── -->
       <div class="panel on" id="p-menu">
-        <h2>Holdings</h2>
-        <p>Drag from your circles onto any other circle to send half its troops.<br>Drag across several of your own first to send from all of them.</p>
-        <p class="err" id="menuErr"></p>
-        <div class="row"><input id="name" maxlength="18" placeholder="Your name" autocomplete="off"></div>
-        <button id="btnCreate" type="button">Create a room</button>
-        <div class="or" id="orRow">or join one</div>
-        <div class="row" id="joinRow">
-          <input id="code" maxlength="4" placeholder="CODE" autocomplete="off" spellcheck="false">
-          <button class="ghost" id="btnJoin" type="button">Join</button>
+        <h1 class="logo">Holdings</h1>
+        <p class="tag">Send half a circle's troops to take the ones beside it. Hold the whole map to win.</p>
+        <input id="name" class="field" maxlength="18" placeholder="Your name" autocomplete="off">
+        <button id="btnPlay" class="btn primary" type="button">Play solo</button>
+        <button id="btnCreate" class="btn tinted" type="button">Create a room</button>
+        <div class="divider"><span id="orRow">or join with a code</span></div>
+        <div class="join">
+          <input id="code" class="field" maxlength="4" placeholder="CODE" autocomplete="off" spellcheck="false">
+          <button class="btn ghost" id="btnJoin" type="button">Join</button>
         </div>
+        <p class="err" id="menuErr"></p>
+        <p class="how">Drag from your circles onto any circle to send half its troops. Drag across several of yours first to send from all at once.</p>
       </div>
 
-      <!-- ── room ── -->
+      <!-- ── lobby ── -->
       <div class="panel" id="p-room">
-        <div class="bigcode" id="roomCode">····</div>
-        <p class="sub">Room code</p>
+        <div class="code-badge" id="roomCode" title="Tap to copy">····</div>
+        <p class="sub">Share this code so friends can join</p>
         <div class="seats" id="seats"></div>
+        <button id="btnStart" class="btn primary" type="button">Start</button>
+        <button id="btnReady" class="btn tinted" type="button" style="display:none">I'm ready</button>
         <p class="err" id="roomErr"></p>
-        <button id="btnStart" type="button">Start the match</button>
-        <div class="or"><span id="waitMsg">Anyone with the link can drop in</span></div>
-        <button class="ghost" id="btnCopy" type="button">Copy invite link</button>
+        <div class="lobby-foot">
+          <button class="btn ghost" id="btnCopy" type="button">Copy invite link</button>
+          <span class="waitMsg" id="waitMsg"></span>
+        </div>
       </div>
 
       <!-- ── result ── -->
       <div class="panel" id="p-over">
         <h2 id="overT">The map is yours</h2>
-        <p id="overP"></p>
-        <button id="btnAgain" type="button">Play again</button>
-        <div class="or"><span id="againMsg">&nbsp;</span></div>
-        <button class="ghost" id="btnBack" type="button">Back to the room</button>
+        <p class="lead" id="overP"></p>
+        <button id="btnAgain" class="btn primary" type="button">Play again</button>
+        <button class="btn ghost" id="btnBack" type="button">Back to the room</button>
+        <div class="lobby-foot"><span class="waitMsg" id="againMsg">&nbsp;</span></div>
       </div>
 
     </div>
@@ -169,6 +229,7 @@ const W = 1000, H = 640;
 const SEND_FRACTION = 0.5;
 const TROOP_SPEED   = 132;
 const TROOP_GAP     = TROOP_SPEED * 0.028;
+const PRED_TTL      = 4000;   /* drop a predicted column the server never confirms */
 const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const FACTIONS = [
@@ -184,11 +245,13 @@ const paint = o => (o == null || o < 0 ? NEUTRAL : FACTIONS[o]);
 const cv  = document.getElementById("game");
 const ctx = cv.getContext("2d");
 const $   = id => document.getElementById(id);
+const nameVal = () => $("name").value.trim();
 
 /* ══════════════════════════════════════════════════════════════
    State
    ══════════════════════════════════════════════════════════════ */
-const net = { code:null, pid:null, seat:null, host:false, phase:"menu", roster:[], es:null, ok:true, owner:false };
+const net = { code:null, pid:null, seat:null, host:false, phase:"menu", roster:[],
+              es:null, ok:true, owner:false, solo:false, ready:false, winner:null, cdEnd:0 };
 const G = {
   nodes: [],        /* {x,y,r,tier,home,owner,count,pulse,flash} */
   links: [],
@@ -207,7 +270,8 @@ let sel = [], dragging = false, px = 0, py = 0;
    ══════════════════════════════════════════════════════════════ */
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 /* worth retrying: a wrong-machine hit while the app runs on more than one
-   instance, a brief network blip, or a mid-deploy hiccup */
+   instance, a brief network blip, or a mid-deploy hiccup. Orders are made
+   idempotent by cid on the server, so a retried send never sends twice. */
 const RETRYABLE = /closed|not in this room|no room with that code|server error/i;
 async function api(action, extra){
   const body = Object.assign({ action, code: net.code, pid: net.pid }, extra || {});
@@ -254,17 +318,21 @@ function connect(){
 }
 
 function onLobby(d){
+  const wasPhase = net.phase;
   net.phase  = d.phase;
   net.host   = d.host === net.pid;
+  net.hostPid = d.host;
   net.roster = d.players;
   const me = d.players.find(p => p.pid === net.pid);
-  net.seat = me ? me.seat : null;
+  net.seat  = me ? me.seat : null;
+  net.ready = me ? !!me.ready : false;
   net.winner = d.winner;
+  if (d.phase === "countdown" && (wasPhase !== "countdown" || !net.cdEnd)){
+    net.cdEnd = performance.now() + (d.countdownMs || 0);
+  }
   paintRoom();
   paintHud();
-  if (d.phase === "lobby")      showPanel("p-room");
-  else if (d.phase === "over")  showOver();
-  else                          showPanel(null);
+  showStage();
 }
 
 function onInit(d){
@@ -282,6 +350,9 @@ function onInit(d){
 
 function onState(d){
   if (!G.nodes.length) return;
+  /* after a reload our local cid resets to 0 — jump it past what the server
+     has already seen, so fresh orders aren't mistaken for old ones */
+  if (d.ack > cid) cid = d.ack;
   /* the server has processed everything up to `ack` — drop those guesses */
   pending = pending.filter(p => p.cid > d.ack);
 
@@ -327,9 +398,13 @@ function issue(from, to){
 }
 
 function rebuild(){
+  const now = performance.now();
+  /* a prediction the server never confirms (a lost order on a bad link) would
+     otherwise leave a ghost column stuck forever — retire it */
+  if (pending.length) pending = pending.filter(p => now - p.t0 < PRED_TTL);
+
   const c = G.nodes.map(n => n.count);
   const ghosts = [];
-  const now = performance.now();
   for (const p of pending){
     for (const s of p.from){
       const n = G.nodes[s];
@@ -495,7 +570,7 @@ function render(){
       ctx.beginPath(); ctx.arc(n.x, n.y, n.r + 6, 0, Math.PI * 2); ctx.stroke();
     }
 
-    ctx.fillStyle = owned ? "#fff" : "rgba(232,235,239,.72)";
+    ctx.fillStyle = owned ? "#fff" : "rgba(243,245,248,.72)";
     ctx.font = "600 " + (n.home ? 19 : n.tier === 2 ? 17 : n.tier === 1 ? 15 : 13) + "px system-ui, sans-serif";
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.fillText(String(Math.max(0, view.c[i] != null ? view.c[i] : n.count)), n.x, n.y + 1);
@@ -562,10 +637,10 @@ function paintHud(){
                      !G.nodes.some(n => n.owner === net.seat) &&
                      ![...G.flights.values()].some(f => f.owner === net.seat);
     const set = (txt, cls) => { if (hint.textContent !== txt){ hint.textContent = txt; hint.className = cls; } };
-    if (!net.ok)                                  { set("reconnecting…", "hint warn"); }
-    else if (wipedOut)                            { set("you are out — watching", "hint warn"); }
+    if (!net.ok)                                       { set("reconnecting…", "hint warn"); }
+    else if (wipedOut)                                 { set("you are out — watching", "hint warn"); }
     else if (net.phase === "live" && net.seat === null){ set("spectating", "hint"); }
-    else                                          { set("drag from yours onto anything", "hint"); }
+    else                                               { set("drag from yours onto anything", "hint"); }
   }
 }
 
@@ -585,12 +660,38 @@ function hud(dt){
 }
 const fmt = s => Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
 
+/* ── which surface is showing ── */
 function showPanel(id){
   const ov = $("ov");
   for (const p of document.querySelectorAll(".panel")) p.classList.remove("on");
   if (!id){ ov.classList.remove("on"); return; }
   ov.classList.add("on");
   $(id).classList.add("on");
+}
+function showStage(){
+  const p = net.phase;
+  $("count").classList.toggle("on", p === "countdown" || (net.solo && p === "lobby"));
+  if (p === "menu")            showPanel("p-menu");
+  else if (p === "lobby")      showPanel(net.solo ? null : "p-room");
+  else if (p === "countdown")  showPanel(null);
+  else if (p === "over")       showOver();
+  else                         showPanel(null);   /* live */
+}
+
+let lastCd = -99;
+function paintCountdown(now){
+  if (net.phase === "lobby" && net.solo){
+    if (lastCd !== -1){ lastCd = -1; $("countNum").textContent = ""; $("countSub").textContent = "Setting up…"; }
+    return;
+  }
+  if (net.phase !== "countdown") { lastCd = -99; return; }
+  const n = Math.min(3, Math.max(0, Math.ceil((net.cdEnd - now) / 1000)));
+  if (n === lastCd) return;
+  lastCd = n;
+  const el = $("countNum");
+  el.textContent = n > 0 ? String(n) : "Go";
+  $("countSub").textContent = n > 0 ? "Get ready" : " ";
+  el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop");
 }
 
 function paintRoom(){
@@ -601,31 +702,50 @@ function paintRoom(){
   for (let s = 0; s < FACTIONS.length; s++){
     const p = net.roster.find(x => x.seat === s);
     const row = document.createElement("div");
-    row.className = "seat" + (p ? "" : " empty");
+    row.className = "seat" + (p ? "" : " empty") + (p && p.pid === net.pid ? " mine" : "");
     const d = document.createElement("span");
-    d.className = "dot"; d.style.background = FACTIONS[s].main;
+    d.className = "dot"; d.style.background = FACTIONS[s].main; d.style.color = FACTIONS[s].main;
     const who = document.createElement("span");
     who.className = "who";
-    who.textContent = p ? p.name : "Open — played by AI";
-    const tag = document.createElement("span");
-    tag.className = "tag";
-    tag.textContent = p ? (p.pid === net.pid ? "you" : (p.live ? "" : "away")) : "";
-    row.append(d, who, tag);
+    who.textContent = p ? (p.name + (p.pid === net.pid ? " (you)" : "")) : "Open — played by AI";
+    const badge = document.createElement("span");
+    badge.className = "badge";
+    if (!p)                           badge.textContent = "AI";
+    else if (p.pid === net.hostPid)   badge.textContent = "host";
+    else if (!p.live)               { badge.textContent = "away"; badge.className = "badge away"; }
+    else if (p.ready)               { badge.textContent = "ready"; badge.className = "badge on"; }
+    else                              badge.textContent = "not ready";
+    row.append(d, who, badge);
     box.appendChild(row);
   }
   const specs = net.roster.filter(p => p.seat === null);
   if (specs.length){
     const row = document.createElement("div");
     row.className = "seat empty";
-    row.textContent = specs.length + " watching";
+    row.textContent = specs.length + (specs.length === 1 ? " person watching" : " people watching");
     box.appendChild(row);
   }
-  $("btnStart").style.display = net.host ? "" : "none";
+
+  /* ready count across present, seated players who aren't the host */
+  const others = net.roster.filter(p => p.seat !== null && p.live && !(net.host && p.pid === net.pid));
+  const guests = net.host ? others : others.filter(p => p.pid !== net.pid);
+  const readyN = guests.filter(p => p.ready).length;
+
+  const start = $("btnStart"), ready = $("btnReady");
+  start.style.display = net.host ? "" : "none";
+  ready.style.display = net.host ? "none" : "";
+  if (net.host){
+    start.textContent = guests.length ? ("Start · " + readyN + "/" + guests.length + " ready") : "Start";
+  } else {
+    ready.textContent = net.ready ? "Ready ✓" : "I'm ready";
+    ready.className = "btn " + (net.ready ? "ready-on" : "tinted");
+  }
   $("waitMsg").textContent = net.host
-    ? "Anyone with the link can drop in"
-    : "Waiting for the host to start";
+    ? "You can start whenever you like"
+    : (net.ready ? "Waiting for the host to start" : "Tap ready when you are set");
+
   $("btnAgain").style.display = net.host ? "" : "none";
-  $("againMsg").textContent = net.host ? "\u00a0" : "Waiting for the host";
+  $("againMsg").textContent = net.host ? " " : "Waiting for the host";
 }
 
 function showOver(){
@@ -635,7 +755,7 @@ function showOver(){
   $("overT").textContent =
     w === net.seat && net.seat !== null ? "The map is yours"
     : w == null ? "Match over"
-    : (holder ? holder.name : FACTIONS[w].name) + " took the map";
+    : (holder ? holder.name : FACTIONS[w] ? FACTIONS[w].name : "Someone") + " took the map";
   $("overP").innerHTML = "Held " + mine + " of " + (G.nodes.length || 30) + " &middot; " + fmt(G.elapsed);
   showPanel("p-over");
 }
@@ -655,8 +775,6 @@ const HOLD_FRESH = 15000;   /* a tab heartbeating within this window still owns 
 function loadSaved(){
   try { return JSON.parse(localStorage.getItem("holdings") || "null"); } catch (e){ return null; }
 }
-/* the pid we may reclaim for `code` — ours across a refresh, or one a closed
-   tab left behind. null while another live tab is holding that seat. */
 function resumablePid(code){
   const s = loadSaved();
   if (!s || s.code !== code) return null;
@@ -667,12 +785,11 @@ function otherTabHolds(code){
   const s = loadSaved();
   return !!(s && s.code === code && s.tab !== tabId && Date.now() - (s.ts || 0) < HOLD_FRESH);
 }
-
 function remember(){
   try {
     if (net.owner) localStorage.setItem("holdings",
       JSON.stringify({ code:net.code, pid:net.pid, tab:tabId, ts:Date.now() }));
-    localStorage.setItem("holdings.name", $("name").value.trim());
+    localStorage.setItem("holdings.name", nameVal());
   } catch (e){}
 }
 function enterRoom(code, pid, own){
@@ -680,58 +797,71 @@ function enterRoom(code, pid, own){
   net.owner = own !== false;
   reAttempts = 0;
   remember();
-  const url = location.pathname + "?r=" + code;
-  history.replaceState(null, "", url);
+  history.replaceState(null, "", location.pathname + "?r=" + code);
   connect();
   paintHud();
 }
-/* keep our claim fresh so a duplicate tab can tell we are still here */
 setInterval(() => { if (net.owner && net.code) remember(); }, 5000);
+
+$("btnPlay").addEventListener("click", async () => {
+  $("menuErr").textContent = "";
+  net.solo = true;
+  const r = await api("create", { name: nameVal(), code:null, pid:null });
+  if (!r.ok){ net.solo = false; return ($("menuErr").textContent = r.error || "Could not start."); }
+  enterRoom(r.code, r.pid);
+  const s = await api("start");
+  if (!s.ok){ net.solo = false; showStage(); }
+});
 
 $("btnCreate").addEventListener("click", async () => {
   $("menuErr").textContent = "";
-  const r = await api("create", { name: $("name").value.trim(), code:null, pid:null });
+  net.solo = false;
+  const r = await api("create", { name: nameVal(), code:null, pid:null });
   if (!r.ok) return ($("menuErr").textContent = r.error || "Could not create the room.");
   enterRoom(r.code, r.pid);
 });
 
 $("btnJoin").addEventListener("click", () => doJoin($("code").value));
 $("code").addEventListener("keydown", e => { if (e.key === "Enter") doJoin($("code").value); });
-$("name").addEventListener("keydown", e => {
-  if (e.key === "Enter") ($("btnJoin").classList.contains("ghost") ? $("btnCreate") : $("btnJoin")).click();
-});
+$("name").addEventListener("keydown", e => { if (e.key === "Enter") $("btnPlay").click(); });
 
 async function doJoin(raw){
   const code = String(raw || "").toUpperCase().trim();
   $("menuErr").textContent = "";
   if (code.length !== 4) return ($("menuErr").textContent = "Room codes are four characters.");
+  net.solo = false;
   const pid = resumablePid(code);
-  const r = await api("join", { code, pid, name: $("name").value.trim() });
+  const r = await api("join", { code, pid, name: nameVal() });
   if (!r.ok) return ($("menuErr").textContent = r.error || "Could not join.");
-  /* own the saved slot if we reclaimed our seat, or no other tab holds it */
   enterRoom(r.code, r.pid, !!pid || !otherTabHolds(code));
 }
 
 $("btnStart").addEventListener("click", () => api("start"));
+$("btnReady").addEventListener("click", async () => {
+  net.ready = !net.ready;          /* optimistic — the roster confirms */
+  paintRoom();
+  await api("ready", { ready: net.ready });
+});
 $("btnAgain").addEventListener("click", () => api("restart"));
 $("btnBack").addEventListener("click",  () => showPanel("p-room"));
 
-$("btnCopy").addEventListener("click", async () => {
+async function copyLink(){
   const link = location.origin + location.pathname + "?r=" + net.code;
   try {
     await navigator.clipboard.writeText(link);
     $("btnCopy").textContent = "Link copied";
     setTimeout(() => ($("btnCopy").textContent = "Copy invite link"), 1600);
-  } catch (e){
-    $("roomErr").textContent = link;
-  }
-});
+  } catch (e){ $("roomErr").textContent = link; }
+}
+$("btnCopy").addEventListener("click", copyLink);
+$("roomCode").addEventListener("click", copyLink);
 
 $("leave").addEventListener("click", () => {
   api("leave");
   if (net.es) net.es.close();
   if (net.owner) try { localStorage.removeItem("holdings"); } catch (e){}
-  net.code = net.pid = null; net.seat = null; net.phase = "menu"; net.roster = []; net.owner = false;
+  net.code = net.pid = null; net.seat = null; net.phase = "menu"; net.roster = [];
+  net.owner = false; net.solo = false; net.ready = false;
   G.nodes = []; G.links = []; G.flights.clear(); pending = []; view = { c:[], ghosts:[] };
   history.replaceState(null, "", location.pathname);
   paintHud();
@@ -767,25 +897,18 @@ try { $("name").value = localStorage.getItem("holdings.name") || ""; } catch (e)
 const wanted = new URLSearchParams(location.search).get("r");
 
 if (wanted){
-  /* arrived on someone's invite link — joining is the point, so it leads */
   const c = wanted.toUpperCase().slice(0, 4);
   $("code").value = c;
   $("btnJoin").textContent = "Join " + c;
-  $("btnJoin").classList.remove("ghost");
-  $("btnCreate").classList.add("ghost");
-  $("btnCreate").textContent = "Start your own room instead";
-  $("p-menu").querySelector("h2").textContent = "Join room " + c;
-  $("orRow").textContent = "or";
-  $("p-menu").insertBefore($("joinRow"), $("btnCreate"));
-  $("p-menu").insertBefore($("orRow"),   $("btnCreate"));
+  $("btnJoin").className = "btn primary";
+  $("btnPlay").className = "btn tinted";
+  $("btnCreate").className = "btn ghost";
+  $("orRow").textContent = "joining room " + c;
   if (resumablePid(c)) doJoin(c);
   else $("name").focus();
 } else {
   const s = loadSaved();
-  if (s && s.code && resumablePid(s.code)){
-    $("code").value = s.code;
-    doJoin(s.code);
-  }
+  if (s && s.code && resumablePid(s.code)) doJoin(s.code);
 }
 
 let last = performance.now();
@@ -802,6 +925,7 @@ let last = performance.now();
     for (const fl of G.flights.values()) fl.prog += TROOP_SPEED * dt;
     G.elapsed += dt;
   }
+  paintCountdown(now);
   rebuild();
   render();
   hud(dt);

@@ -2,7 +2,7 @@
    a disconnect, and a rejoin. Boots the server on a spare port. */
 'use strict';
 const { server } = require("../src/net/server");
-const { NODE_COUNT, NODE_PER_PLAYER, NODE_MAX } = require("../src/config");
+const { NODE_COUNT, NODE_PER_PLAYER, NODE_MAX, COUNTDOWN_MS } = require("../src/config");
 const PORT = 8177, BASE = "http://127.0.0.1:" + PORT;
 /* two players take seats before the match starts, so the board scales to this */
 const EXPECT = Math.min(NODE_MAX, NODE_COUNT + NODE_PER_PLAYER * 2);
@@ -53,6 +53,10 @@ const check = (label, ok, detail) => {
   await wait(400);
   check("both seated", log.A.lobby.players.length === 2, log.A.lobby.players.map(p => p.name + ":" + p.seat).join(","));
 
+  await post({ action:"ready", code:A.code, pid:B.pid, ready:true });
+  await wait(200);
+  check("guest can ready up", !!(log.A.lobby.players.find(p => p.pid === B.pid) || {}).ready);
+
   const refused = await post({ action:"start", code:A.code, pid:B.pid });
   check("only the host may start", refused.ok === false, refused.error);
 
@@ -60,6 +64,10 @@ const check = (label, ok, detail) => {
   await wait(600);
   check("map delivered once", log.B.init && log.B.init.nodes.length === EXPECT, EXPECT + " nodes");
   check("snapshots flowing", !!log.B.state && log.B.state.n.length === EXPECT * 2);
+
+  /* the match opens with a shared countdown — wait for it to flip to live */
+  await wait(COUNTDOWN_MS);
+  check("match went live after the countdown", log.B.state.phase === "live", log.B.state.phase);
 
   const st = log.B.state, seat = log.B.init.seat;
   const mine = [], theirs = [];
@@ -77,6 +85,12 @@ const check = (label, ok, detail) => {
   check("order halves the garrison", log.B.state.n[src*2+1] < before, before + " → " + log.B.state.n[src*2+1]);
   check("order acknowledged", log.B.state.ack === 1);
   check("host sees the column too", log.A.state.f.length > 0);
+
+  /* a retried / duplicated order (same id) must not send troops a second time */
+  const afterOne = log.B.state.n[src*2+1];
+  await post({ action:"send", code:A.code, pid:B.pid, from:[src], to:tgt, cid:1 });
+  await wait(400);
+  check("a replayed order is ignored", log.B.state.n[src*2+1] >= afterOne, afterOne + " → " + log.B.state.n[src*2+1]);
 
   sb.abort();
   await wait(700);

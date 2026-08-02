@@ -18,8 +18,9 @@ function roster(room){
     phase: room.phase,
     host: room.hostPid,
     winner: room.winner === undefined ? null : room.winner,
+    countdownMs: room.phase === "countdown" ? Math.max(0, room.goLiveAt - Date.now()) : 0,
     players: room.order.map(pid => room.players.get(pid)).filter(Boolean).map(p => ({
-      pid: p.pid, name: p.name, seat: p.seat, live: p.live
+      pid: p.pid, name: p.name, seat: p.seat, live: p.live, ready: !!p.ready
     }))
   };
 }

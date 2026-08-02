@@ -2,7 +2,7 @@
 const { SIM_DT, NET_EVERY, ROOM_IDLE_MS, LOBBY_TIMEOUT } = require('../config');
 const { rooms } = require('./rooms');
 const { step } = require('./sim');
-const { broadcastState } = require('../net/protocol');
+const { broadcastState, broadcastLobby } = require('../net/protocol');
 
 /* ══════════════════════════════════════════════════════════════════════════
    The clock
@@ -10,6 +10,14 @@ const { broadcastState } = require('../net/protocol');
    ══════════════════════════════════════════════════════════════════════════ */
 
 function tick(room){
+  /* the countdown is driven here so every client goes live on the same tick */
+  if (room.phase === "countdown" && Date.now() >= room.goLiveAt){
+    room.phase = "live";
+    room.elapsed = 0;
+    broadcastLobby(room);
+    broadcastState(room);
+  }
+
   step(room, SIM_DT);
   if (++room.tickN % NET_EVERY === 0) broadcastState(room);
 
