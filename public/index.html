@@ -231,7 +231,7 @@ const W = 1000, H = 640;
 const SEND_FRACTION = 0.5;
 const TROOP_SPEED   = 132;
 const TROOP_GAP     = TROOP_SPEED * 0.028;
-const PRED_TTL      = 4000;
+const PRED_TTL      = 12000;   /* safety cap; a column normally retires when it lands */
 const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const FACTIONS = [
@@ -254,7 +254,7 @@ const net = { code:null, pid:null, seat:null, host:false, hostPid:null, phase:"m
 const G = { nodes: [], links: [], flights: new Map(), elapsed: 0, started: false };
 let pending = [];
 let cid = 0;
-let view = { c: [] };
+let view = { c: [], ghosts: [] };
 let sel = [], dragging = false, px = 0, py = 0;
 
 /* ── starfield for the idle "space" screen ── */
@@ -350,8 +350,7 @@ function onInit(d){
 
 function onState(d){
   if (net.phase === "tutorial" || !G.nodes.length) return;
-  if (d.ack > cid) cid = d.ack;
-  pending = pending.filter(p => p.cid > d.ack);
+  if (d.ack > cid) cid = d.ack;   /* stay ahead of the server after a reload */
   for (let i = 0; i < G.nodes.length; i++){
     const n = G.nodes[i];
     const owner = d.n[i*2] < 0 ? null : d.n[i*2];
@@ -372,24 +371,50 @@ function onState(d){
   if (net.phase === "pick") paintPick();
 }
 
-/* ── orders: instant source-count drop, server draws the one real column ── */
+/* ── orders — drawn instantly and locally, then reconciled ──────────────────
+   Each order animates its own predicted column right away, so the drag feels
+   immediate no matter the network. The server's echo of that same column is
+   hidden (see render) so an order never shows two columns; the prediction is
+   retired once its column has visually landed. ── */
 function issue(from, to){
   if (!from.length) return;
+  const t = G.nodes[to];
+  if (!t) return;
   const id = ++cid;
-  pending.push({ cid:id, from:from.slice(), to, t0: performance.now() });
+  const legs = [];
+  for (const s of from){
+    const n = G.nodes[s];
+    if (!n || n.owner !== net.seat || s === to) continue;
+    const base = view.c[s] != null ? view.c[s] : n.count;
+    const k = Math.floor(base * SEND_FRACTION);
+    if (k < 1) continue;
+    legs.push({ from:s, k, len: Math.max(8, Math.hypot(t.x - n.x, t.y - n.y) - n.r - t.r * 0.82) });
+  }
+  if (!legs.length) return;
+  pending.push({ cid:id, to, legs, t0: performance.now() });
   api("send", { from, to, cid:id });
 }
 function rebuild(){
   const now = performance.now();
-  if (pending.length) pending = pending.filter(p => now - p.t0 < PRED_TTL);
   const c = G.nodes.map(n => n.count);
-  for (const p of pending) for (const s of p.from){
-    const n = G.nodes[s];
-    if (!n || n.owner !== net.seat || s === p.to) continue;
-    const k = Math.floor(c[s] * SEND_FRACTION);
-    if (k >= 1) c[s] -= k;
+  const ghosts = [];
+  const alive = [];
+  for (const p of pending){
+    if (now - p.t0 > PRED_TTL) continue;
+    const prog = (now - p.t0) / 1000 * TROOP_SPEED;
+    let moving = false;
+    for (const leg of p.legs){
+      const lastArrive = leg.len + (leg.k - 1) * TROOP_GAP;
+      if (prog <= lastArrive + 24){               /* still in flight → predict it */
+        if (c[leg.from] != null) c[leg.from] = Math.max(0, c[leg.from] - leg.k);
+        ghosts.push({ from:leg.from, to:p.to, owner:net.seat, count:leg.k, delivered:0, prog, len:leg.len });
+        moving = true;
+      }
+    }
+    if (moving) alive.push(p);                     /* landed → let the server's count stand */
   }
-  view = { c };
+  pending = alive;
+  view = { c, ghosts };
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -561,7 +586,17 @@ function render(){
     }
   }
   ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
-  for (const fl of G.flights.values()) drawColumn(fl);
+
+  /* draw the server's columns, but hide its echo of the orders we're already
+     predicting — that duplicate, delayed by the round-trip, was the "travels
+     twice" effect. Our own predicted columns are drawn on top. */
+  const mineInFlight = new Set();
+  for (const p of pending) for (const leg of p.legs) mineInFlight.add(leg.from + ">" + p.to);
+  for (const fl of G.flights.values()){
+    if (fl.owner === net.seat && mineInFlight.has(fl.from + ">" + fl.to)) continue;
+    drawColumn(fl);
+  }
+  for (const g of view.ghosts) drawColumn(g);
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -624,7 +659,7 @@ function tutTick(dt){
 }
 function startTutorial(){
   net.phase = "tutorial"; net.code = null; net.owner = false; net.solo = false;
-  pending = []; view = { c:[] };
+  pending = []; view = { c:[], ghosts:[] };
   tutBoard();
   $("tutMsg").innerHTML = TUT_STEPS[0].msg;
   $("tutDone").classList.remove("on");
@@ -894,7 +929,7 @@ $("leave").addEventListener("click", () => {
   if (net.owner) try { localStorage.removeItem("holdings"); } catch (e){}
   net.code = net.pid = null; net.seat = null; net.phase = "menu"; net.roster = [];
   net.owner = false; net.solo = false; net.ready = false;
-  G.nodes = []; G.links = []; G.flights.clear(); G.elapsed = 0; pending = []; view = { c:[] };
+  G.nodes = []; G.links = []; G.flights.clear(); G.elapsed = 0; pending = []; view = { c:[], ghosts:[] };
   history.replaceState(null, "", location.pathname);
   paintHud(); showStage();
 });
