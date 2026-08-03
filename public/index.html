@@ -3,153 +3,140 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Holdings</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='11' fill='none' stroke='%233ED6C0' stroke-width='3'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='11' fill='none' stroke='%230E9F8C' stroke-width='3'/%3E%3C/svg%3E">
+<meta name="theme-color" content="#F5F5F7">
 <!-- system fonts only — no external requests (privacy + reliability) -->
 
 <style>
 :root{
-  --bg:#07080A; --ink:#F3F5F8;
-  --muted:rgba(243,245,248,.56); --faint:rgba(243,245,248,.34); --ghost:rgba(243,245,248,.20);
-  --line:rgba(255,255,255,.09); --line-2:rgba(255,255,255,.16);
-  --card:rgba(20,22,27,.72); --field:rgba(255,255,255,.055);
-  --accent:#3ED6C0; --accent-ink:#052722; --danger:#FF5A6E; --warn:#FFC53D;
-  --r:16px;
+  --bg:#F5F5F7; --surface:#FFFFFF; --ink:#1D1D1F;
+  --muted:rgba(29,29,31,.62); --faint:rgba(29,29,31,.42); --ghost:rgba(29,29,31,.28);
+  --line:rgba(0,0,0,.10); --line-2:rgba(0,0,0,.16);
+  --field:rgba(0,0,0,.045);
+  --accent:#12B39B; --accent-press:#0E9A86; --danger:#E5484D; --warn:#B26A00;
+  --shadow:0 12px 40px -14px rgba(0,0,0,.22);
+  --r:18px;
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;overflow:hidden;-webkit-tap-highlight-color:transparent}
 body{
-  background:
-    radial-gradient(1100px 620px at 50% -10%, rgba(62,214,192,.06), transparent 60%),
-    radial-gradient(900px 700px at 90% 110%, rgba(185,140,255,.05), transparent 55%),
-    var(--bg);
-  color:var(--ink);
+  background:var(--bg);color:var(--ink);
   font-family:system-ui,-apple-system,'SF Pro Text','Segoe UI',Roboto,Helvetica,Arial,sans-serif;
   -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
   display:flex;align-items:center;justify-content:center;padding:18px;
 }
-.shell{width:100%;max-width:1000px;display:flex;flex-direction:column;gap:12px}
+.shell{width:100%;max-width:1000px;display:flex;flex-direction:column;gap:14px}
 
 /* ── top bar ── */
-.hud{display:flex;align-items:center;gap:14px;padding:0 2px;height:26px}
-.brand{font-size:13px;font-weight:600;letter-spacing:-.01em;color:var(--faint);white-space:nowrap}
-.brand b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:.02em}
-.share{flex:1;display:flex;height:6px;border-radius:6px;overflow:hidden;background:rgba(255,255,255,.06);min-width:60px}
+.hud{display:flex;align-items:center;gap:14px;padding:0 4px;height:28px}
+.brand{font-size:15px;font-weight:600;letter-spacing:-.02em;color:var(--ink);white-space:nowrap}
+.brand b{color:var(--accent-press);font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.share{flex:1;display:flex;height:6px;border-radius:6px;overflow:hidden;background:rgba(0,0,0,.07);min-width:60px}
 .share i{display:block;height:100%;transition:width .45s cubic-bezier(.3,1,.4,1)}
-.timer{font-size:13px;font-weight:500;color:var(--faint);font-variant-numeric:tabular-nums;min-width:42px;text-align:right}
+.timer{font-size:14px;font-weight:500;color:var(--faint);font-variant-numeric:tabular-nums;min-width:44px;text-align:right}
 
 /* ── board ── */
 .board{
-  position:relative;border-radius:22px;overflow:hidden;
-  background:linear-gradient(180deg,#0C0F14,#090B0F);
-  border:1px solid var(--line);
-  box-shadow:0 30px 80px -40px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.04);
+  position:relative;border-radius:var(--r);overflow:hidden;
+  background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);
 }
-canvas{display:block;width:100%;height:auto;touch-action:none;cursor:crosshair}
+canvas{display:block;width:100%;height:auto;touch-action:none;cursor:crosshair;background:var(--surface)}
 
 /* ── countdown over the board ── */
-.count{
-  position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;
-  gap:6px;pointer-events:none;background:rgba(7,8,10,.42);backdrop-filter:blur(2px);z-index:2;
-}
+.count{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:6px;pointer-events:none;background:rgba(255,255,255,.58);backdrop-filter:blur(3px);z-index:3}
 .count.on{display:flex}
-.count-num{font-size:150px;font-weight:700;letter-spacing:-.04em;line-height:1;color:var(--ink);
-  text-shadow:0 20px 60px rgba(0,0,0,.6)}
+.count-num{font-size:150px;font-weight:700;letter-spacing:-.04em;line-height:1;color:var(--ink)}
 .count-num.pop{animation:cdpop .42s cubic-bezier(.2,.9,.3,1)}
 @keyframes cdpop{from{transform:scale(1.35);opacity:0}to{transform:scale(1);opacity:1}}
-.count-sub{font-size:14px;font-weight:500;letter-spacing:.02em;color:var(--muted)}
+.count-sub{font-size:15px;font-weight:500;color:var(--muted)}
+
+/* ── interactive tutorial layer ── */
+.tut{position:absolute;inset:0;display:none;z-index:2;pointer-events:none}
+.tut.on{display:block}
+.tut-top{position:absolute;top:16px;left:16px;right:16px;display:flex;gap:10px;align-items:flex-start}
+.tut-msg{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px 16px;font-size:14.5px;line-height:1.45;color:var(--ink);box-shadow:var(--shadow);pointer-events:auto;animation:rise .3s cubic-bezier(.2,.9,.3,1)}
+.tut-msg b{color:var(--accent-press)}
+.tut-top .mini{pointer-events:auto;flex:none}
+.tut-done{position:absolute;left:0;right:0;bottom:26px;display:none;justify-content:center}
+.tut-done.on{display:flex}
+.tut-done .btn{width:auto;pointer-events:auto}
 
 /* ── overlay + panels ── */
-.overlay{position:absolute;inset:0;display:none;place-items:center;padding:20px;
-  background:rgba(7,8,10,.6);backdrop-filter:blur(14px) saturate(1.1);z-index:3}
+.overlay{position:absolute;inset:0;display:none;place-items:center;padding:20px;background:rgba(245,245,247,.72);backdrop-filter:blur(16px) saturate(1.1);z-index:4}
 .overlay.on{display:grid}
 .panel{
-  display:none;width:100%;max-width:392px;padding:30px 28px;
-  background:var(--card);border:1px solid var(--line-2);border-radius:22px;
-  box-shadow:0 40px 90px -30px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,.05);
-  animation:rise .32s cubic-bezier(.2,.9,.3,1);
+  display:none;width:100%;max-width:400px;padding:32px 28px;
+  background:var(--surface);border:1px solid var(--line);border-radius:22px;
+  box-shadow:0 30px 70px -26px rgba(0,0,0,.28);
+  animation:rise .34s cubic-bezier(.2,.9,.3,1);
 }
 .panel.on{display:block}
-@keyframes rise{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes rise{from{opacity:0;transform:translateY(10px) scale(.99)}to{opacity:1;transform:none}}
 
-.logo{font-size:30px;font-weight:700;letter-spacing:-.03em;margin:0 0 6px;text-align:center}
-.tag{margin:0 0 22px;font-size:14px;color:var(--muted);line-height:1.5;text-align:center}
-.panel h2{font-size:26px;font-weight:700;letter-spacing:-.025em;margin:0 0 8px;text-align:center}
-.panel .lead{margin:0 0 22px;font-size:14px;color:var(--muted);line-height:1.5;text-align:center}
-.err{color:var(--danger);font-size:13px;min-height:18px;margin:12px 0 0;text-align:center}
-.how{margin:20px 0 0;font-size:12px;line-height:1.55;color:var(--faint);text-align:center}
+.logo{font-size:32px;font-weight:700;letter-spacing:-.035em;margin:0 0 6px;text-align:center}
+.tag{margin:0 0 24px;font-size:15px;color:var(--muted);line-height:1.5;text-align:center}
+.panel h2{font-size:27px;font-weight:700;letter-spacing:-.03em;margin:0 0 8px;text-align:center}
+.panel .lead{margin:0 0 22px;font-size:15px;color:var(--muted);line-height:1.5;text-align:center}
+.err{color:var(--danger);font-size:13.5px;min-height:18px;margin:12px 0 0;text-align:center}
+.how{margin:20px 0 0;font-size:12.5px;line-height:1.55;color:var(--faint);text-align:center}
 
 /* ── controls ── */
-.btn{
-  display:block;width:100%;font-family:inherit;font-size:15px;font-weight:590;letter-spacing:-.01em;
-  border:1px solid transparent;border-radius:13px;padding:13px 18px;cursor:pointer;
-  transition:transform .12s ease, background .15s, border-color .15s, color .15s, opacity .15s;
-}
-.btn+.btn{margin-top:9px}
-.btn:active{transform:scale(.985)}
-.btn:disabled{opacity:.4;cursor:default}
-.btn.primary{background:var(--accent);color:var(--accent-ink);box-shadow:0 8px 24px -10px rgba(62,214,192,.7)}
-.btn.primary:hover{background:#4fe0cb}
-.btn.tinted{background:rgba(255,255,255,.08);color:var(--ink);border-color:var(--line-2)}
-.btn.tinted:hover{background:rgba(255,255,255,.12)}
+.btn{display:block;width:100%;font-family:inherit;font-size:16px;font-weight:590;letter-spacing:-.01em;border:1px solid transparent;border-radius:14px;padding:14px 18px;cursor:pointer;transition:transform .12s ease, background .15s, border-color .15s, color .15s, box-shadow .15s, opacity .15s}
+.btn+.btn{margin-top:10px}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.primary{background:var(--accent);color:#fff;box-shadow:0 10px 26px -12px rgba(18,179,155,.95)}
+.btn.primary:hover{background:var(--accent-press)}
+.btn.tinted{background:rgba(0,0,0,.05);color:var(--ink);border-color:var(--line)}
+.btn.tinted:hover{background:rgba(0,0,0,.08)}
 .btn.ghost{background:transparent;color:var(--muted);border-color:var(--line-2)}
-.btn.ghost:hover{color:var(--ink);border-color:rgba(255,255,255,.3)}
-.btn.ready-on{background:rgba(62,214,192,.16);color:var(--accent);border-color:rgba(62,214,192,.5)}
+.btn.ghost:hover{color:var(--ink);border-color:rgba(0,0,0,.28)}
+.btn.ready-on{background:rgba(18,179,155,.12);color:var(--accent-press);border-color:rgba(18,179,155,.5)}
+.btn.link{background:none;border:none;color:var(--accent-press);font-size:14px;font-weight:500;padding:10px;width:auto;margin:4px auto 0}
+.btn.link:hover{text-decoration:underline}
 
-.field{
-  font-family:inherit;font-size:15px;font-weight:500;color:var(--ink);
-  background:var(--field);border:1px solid var(--line-2);border-radius:13px;
-  padding:13px 15px;width:100%;outline:none;transition:border-color .15s, background .15s;
-}
-.field:focus{border-color:rgba(62,214,192,.6);background:rgba(255,255,255,.07)}
+.field{font-family:inherit;font-size:16px;font-weight:500;color:var(--ink);background:var(--field);border:1px solid var(--line-2);border-radius:14px;padding:14px 16px;width:100%;outline:none;transition:border-color .15s, background .15s, box-shadow .15s}
+.field:focus{border-color:var(--accent);background:#fff;box-shadow:0 0 0 4px rgba(18,179,155,.14)}
 .field::placeholder{color:var(--ghost)}
 #name{margin-bottom:14px}
 .join{display:flex;gap:8px}
 .join .field{flex:1}
-.join .btn{width:auto;padding:13px 20px}
+.join .btn{width:auto;padding:14px 22px}
 #code{text-transform:uppercase;letter-spacing:.3em;text-align:center;font-weight:600}
 
-.divider{display:flex;align-items:center;gap:12px;margin:18px 0 14px;color:var(--faint);
-  font-size:12px;letter-spacing:.01em}
+.divider{display:flex;align-items:center;gap:12px;margin:18px 0 14px;color:var(--faint);font-size:12.5px}
 .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
 
-/* ── lobby ── */
-.code-badge{
-  font-size:44px;font-weight:700;letter-spacing:.16em;padding-left:.16em;text-align:center;
-  color:var(--accent);margin:0 0 4px;cursor:pointer;
-}
-.sub{font-size:12px;color:var(--faint);text-align:center;margin:0 0 20px}
-.seats{display:flex;flex-direction:column;gap:7px;margin:0 0 18px;text-align:left}
-.seat{display:flex;align-items:center;gap:11px;padding:10px 13px;border-radius:12px;
-  background:rgba(255,255,255,.04);border:1px solid transparent;font-size:14px}
-.seat.mine{border-color:var(--line-2);background:rgba(255,255,255,.06)}
-.seat .dot{width:10px;height:10px;border-radius:50%;flex:none;box-shadow:0 0 10px -1px currentColor}
-.seat .who{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.seat .badge{font-size:11px;font-weight:600;letter-spacing:.01em;color:var(--faint);white-space:nowrap}
-.seat .badge.on{color:var(--accent)}
+.code-badge{font-size:46px;font-weight:700;letter-spacing:.14em;padding-left:.14em;text-align:center;color:var(--accent-press);margin:0 0 4px;cursor:pointer}
+.sub{font-size:13px;color:var(--faint);text-align:center;margin:0 0 22px}
+.seats{display:flex;flex-direction:column;gap:8px;margin:0 0 18px;text-align:left}
+.seat{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:13px;background:rgba(0,0,0,.035);border:1px solid transparent;font-size:14.5px}
+.seat.mine{border-color:var(--line-2);background:rgba(0,0,0,.05)}
+.seat .dot{width:11px;height:11px;border-radius:50%;flex:none}
+.seat .who{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:450}
+.seat .badge{font-size:11.5px;font-weight:600;color:var(--faint);white-space:nowrap}
+.seat .badge.on{color:var(--accent-press)}
 .seat .badge.away{color:var(--warn)}
-.seat.empty{opacity:.5}
+.seat.empty{opacity:.55}
 .lobby-foot{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:16px}
-.waitMsg{font-size:12px;color:var(--faint);text-align:center;min-height:15px}
+.waitMsg{font-size:12.5px;color:var(--faint);text-align:center;min-height:15px}
 
 /* ── legend ── */
-.legend{display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--muted);padding:0 2px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:12.5px;color:var(--muted);padding:0 4px}
 .legend .p{display:flex;align-items:center;gap:7px}
-.legend .dot{width:8px;height:8px;border-radius:50%}
+.legend .dot{width:9px;height:9px;border-radius:50%}
 .legend .n{font-variant-numeric:tabular-nums;color:var(--muted);font-weight:500}
 .legend .me{color:var(--ink);font-weight:600}
 .hint{margin-left:auto;color:var(--faint)}
 .hint.warn{color:var(--warn)}
 
-/* ── mini buttons ── */
-.mini{font-family:inherit;font-size:12px;font-weight:500;letter-spacing:-.01em;padding:6px 13px;border-radius:9px;
-  background:transparent;color:var(--faint);border:1px solid var(--line-2);cursor:pointer;
-  transition:color .15s,border-color .15s,background .15s}
-.mini:hover{color:var(--ink);border-color:rgba(255,255,255,.3)}
-.mini.armed{color:var(--danger);border-color:rgba(255,90,110,.55)}
+.mini{font-family:inherit;font-size:13px;font-weight:500;letter-spacing:-.01em;padding:7px 14px;border-radius:10px;background:rgba(0,0,0,.04);color:var(--muted);border:1px solid var(--line);cursor:pointer;transition:color .15s,border-color .15s,background .15s}
+.mini:hover{color:var(--ink);border-color:rgba(0,0,0,.24)}
+.mini.armed{color:var(--danger);border-color:rgba(229,72,77,.5)}
 
 @media (max-width:620px){
-  .logo{font-size:26px}.panel h2{font-size:22px}
-  .code-badge{font-size:36px}.count-num{font-size:104px}
+  .logo{font-size:27px}.panel h2{font-size:23px}
+  .code-badge{font-size:38px}.count-num{font-size:104px}
   .panel{padding:26px 22px}
 }
 </style>
@@ -165,6 +152,14 @@ canvas{display:block;width:100%;height:auto;touch-action:none;cursor:crosshair}
 
   <div class="board" id="board">
     <canvas id="game" width="1000" height="640"></canvas>
+
+    <div class="tut" id="tut">
+      <div class="tut-top">
+        <div class="tut-msg" id="tutMsg"></div>
+        <button class="mini" id="tutSkip" type="button">Skip</button>
+      </div>
+      <div class="tut-done" id="tutDone"><button class="btn primary" id="tutPlay" type="button">Play for real</button></div>
+    </div>
 
     <div class="count" id="count">
       <div class="count-num" id="countNum">3</div>
@@ -186,7 +181,7 @@ canvas{display:block;width:100%;height:auto;touch-action:none;cursor:crosshair}
           <button class="btn ghost" id="btnJoin" type="button">Join</button>
         </div>
         <p class="err" id="menuErr"></p>
-        <p class="how">Drag from your circles onto any circle to send half its troops. Drag across several of yours first to send from all at once.</p>
+        <button id="btnTut" class="btn link" type="button">How to play</button>
       </div>
 
       <!-- ── lobby ── -->
@@ -229,17 +224,18 @@ const W = 1000, H = 640;
 const SEND_FRACTION = 0.5;
 const TROOP_SPEED   = 132;
 const TROOP_GAP     = TROOP_SPEED * 0.028;
-const PRED_TTL      = 4000;   /* drop a predicted column the server never confirms */
 const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+/* light-theme faction colours: a soft fill, a vivid ring, and a readable ink
+   for the number — all tuned to sit on a white board */
 const FACTIONS = [
-  { name:"Teal",    main:"#3ED6C0", dim:"#0E332E", glow:"62,214,192" },
-  { name:"Crimson", main:"#FF5A6E", dim:"#38151B", glow:"255,90,110" },
-  { name:"Amber",   main:"#FFC53D", dim:"#372B10", glow:"255,197,61" },
-  { name:"Violet",  main:"#B98CFF", dim:"#271F3C", glow:"185,140,255" },
-  { name:"Lime",    main:"#8BE04E", dim:"#1F3115", glow:"139,224,78" }
+  { name:"Teal",   ring:"#0E9F8C", fill:"#D7F5EF", ink:"#0A7365", glow:"14,159,140" },
+  { name:"Coral",  ring:"#F0435A", fill:"#FDE1E5", ink:"#C51D36", glow:"240,67,90" },
+  { name:"Amber",  ring:"#E08A00", fill:"#FBEAC8", ink:"#A15E00", glow:"224,138,0" },
+  { name:"Violet", ring:"#8257F5", fill:"#EAE2FD", ink:"#5F35C9", glow:"130,87,245" },
+  { name:"Green",  ring:"#4FA52A", fill:"#E3F5D5", ink:"#3B7C1D", glow:"79,165,42" }
 ];
-const NEUTRAL = { name:"Free", main:"#78838F", dim:"#171B21", glow:"120,131,143" };
+const NEUTRAL = { name:"Free", ring:"#C7CBD2", fill:"#F1F2F4", ink:"#989EA6", glow:"160,166,174" };
 const paint = o => (o == null || o < 0 ? NEUTRAL : FACTIONS[o]);
 
 const cv  = document.getElementById("game");
@@ -250,10 +246,10 @@ const nameVal = () => $("name").value.trim();
 /* ══════════════════════════════════════════════════════════════
    State
    ══════════════════════════════════════════════════════════════ */
-const net = { code:null, pid:null, seat:null, host:false, phase:"menu", roster:[],
-              es:null, ok:true, owner:false, solo:false, ready:false, winner:null, cdEnd:0 };
+const net = { code:null, pid:null, seat:null, host:false, hostPid:null, phase:"menu",
+              roster:[], es:null, ok:true, owner:false, solo:false, ready:false, winner:null, cdEnd:0 };
 const G = {
-  nodes: [],        /* {x,y,r,tier,home,owner,count,pulse,flash} */
+  nodes: [],
   links: [],
   flights: new Map(),
   elapsed: 0,
@@ -261,7 +257,8 @@ const G = {
 };
 let pending = [];   /* our own sends the server has not acknowledged yet */
 let cid = 0;
-let view = { c: [], ghosts: [] };
+let view = { c: [] };
+const PRED_TTL = 4000;
 
 let sel = [], dragging = false, px = 0, py = 0;
 
@@ -269,9 +266,6 @@ let sel = [], dragging = false, px = 0, py = 0;
    Talking to the server
    ══════════════════════════════════════════════════════════════ */
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-/* worth retrying: a wrong-machine hit while the app runs on more than one
-   instance, a brief network blip, or a mid-deploy hiccup. Orders are made
-   idempotent by cid on the server, so a retried send never sends twice. */
 const RETRYABLE = /closed|not in this room|no room with that code|server error/i;
 async function api(action, extra){
   const body = Object.assign({ action, code: net.code, pid: net.pid }, extra || {});
@@ -280,9 +274,7 @@ async function api(action, extra){
     if (attempt) await sleep(150 * attempt);
     try {
       const r = await fetch("/api/cmd", {
-        method: "POST",
-        headers: { "content-type":"application/json" },
-        body: JSON.stringify(body)
+        method: "POST", headers: { "content-type":"application/json" }, body: JSON.stringify(body)
       });
       if (r.status === 429) return { ok:false, error:"Slow down a moment." };
       const j = await r.json();
@@ -298,7 +290,6 @@ function connect(){
   if (net.es) net.es.close();
   const es = new EventSource("/api/stream?code=" + net.code + "&pid=" + net.pid);
   net.es = es;
-
   es.addEventListener("hello",  () => { net.ok = true; paintHud(); });
   es.addEventListener("lobby",  e => onLobby(JSON.parse(e.data)));
   es.addEventListener("init",   e => onInit(JSON.parse(e.data)));
@@ -306,9 +297,6 @@ function connect(){
   es.onopen  = () => { net.ok = true; reAttempts = 0; paintHud(); };
   es.onerror = () => {
     net.ok = false; paintHud();
-    /* EventSource retries transient drops itself, but gives up on a hard close
-       — routed to an instance without the room, or a redeploy. Re-open a few
-       times; a fresh connection may land on the right instance. */
     if (es.readyState === 2 && net.code && reAttempts < 12){
       reAttempts++;
       clearTimeout(reTimer);
@@ -319,10 +307,10 @@ function connect(){
 
 function onLobby(d){
   const wasPhase = net.phase;
-  net.phase  = d.phase;
-  net.host   = d.host === net.pid;
+  net.phase   = d.phase;
+  net.host    = d.host === net.pid;
   net.hostPid = d.host;
-  net.roster = d.players;
+  net.roster  = d.players;
   const me = d.players.find(p => p.pid === net.pid);
   net.seat  = me ? me.seat : null;
   net.ready = me ? !!me.ready : false;
@@ -336,10 +324,7 @@ function onLobby(d){
 }
 
 function onInit(d){
-  G.nodes = d.nodes.map(a => ({
-    x:a[0], y:a[1], r:a[2], tier:a[3], home:!!a[4],
-    owner:null, count:0, pulse:0, flash:0
-  }));
+  G.nodes = d.nodes.map(a => ({ x:a[0], y:a[1], r:a[2], tier:a[3], home:!!a[4], owner:null, count:0, pulse:0, flash:0 }));
   G.links = d.links;
   G.flights.clear();
   pending = [];
@@ -349,11 +334,8 @@ function onInit(d){
 }
 
 function onState(d){
-  if (!G.nodes.length) return;
-  /* after a reload our local cid resets to 0 — jump it past what the server
-     has already seen, so fresh orders aren't mistaken for old ones */
-  if (d.ack > cid) cid = d.ack;
-  /* the server has processed everything up to `ack` — drop those guesses */
+  if (net.phase === "tutorial" || !G.nodes.length) return;
+  if (d.ack > cid) cid = d.ack;                 /* stay ahead after a reload */
   pending = pending.filter(p => p.cid > d.ack);
 
   for (let i = 0; i < G.nodes.length; i++){
@@ -362,33 +344,28 @@ function onState(d){
     const count = d.n[i*2+1];
     if (owner !== n.owner) n.pulse = 1;
     else if (count < n.count) n.flash = 1;
-    n.owner = owner;
-    n.count = count;
+    n.owner = owner; n.count = count;
   }
 
   const seen = new Set();
   for (const a of d.f){
-    const id = a[0];
-    seen.add(id);
+    const id = a[0]; seen.add(id);
     let fl = G.flights.get(id);
-    if (!fl){
-      fl = { id, from:a[1], to:a[2], owner:a[3], count:a[4], delivered:a[5], prog:a[6] };
-      G.flights.set(id, fl);
-    } else {
+    if (!fl){ fl = { id, from:a[1], to:a[2], owner:a[3], count:a[4], delivered:a[5], prog:a[6] }; G.flights.set(id, fl); }
+    else {
       fl.delivered = a[5];
       const drift = a[6] - fl.prog;
-      /* nudge toward the server rather than snapping — snapping stutters */
       fl.prog += Math.abs(drift) > 40 ? drift : drift * 0.35;
     }
   }
   for (const id of [...G.flights.keys()]) if (!seen.has(id)) G.flights.delete(id);
-
   G.elapsed = d.t;
 }
 
 /* ══════════════════════════════════════════════════════════════
-   Prediction — our own sends are drawn the instant we release, then
-   quietly replaced by the server's version of the same column
+   Prediction — release drops the source count instantly so the drag
+   feels responsive; the server's own column is the only one drawn, so
+   an order never looks like it travels twice.
    ══════════════════════════════════════════════════════════════ */
 function issue(from, to){
   if (!from.length) return;
@@ -396,31 +373,19 @@ function issue(from, to){
   pending.push({ cid:id, from:from.slice(), to, t0: performance.now() });
   api("send", { from, to, cid:id });
 }
-
 function rebuild(){
   const now = performance.now();
-  /* a prediction the server never confirms (a lost order on a bad link) would
-     otherwise leave a ghost column stuck forever — retire it */
   if (pending.length) pending = pending.filter(p => now - p.t0 < PRED_TTL);
-
   const c = G.nodes.map(n => n.count);
-  const ghosts = [];
   for (const p of pending){
     for (const s of p.from){
       const n = G.nodes[s];
       if (!n || n.owner !== net.seat || s === p.to) continue;
       const k = Math.floor(c[s] * SEND_FRACTION);
-      if (k < 1) continue;
-      c[s] -= k;
-      const t = G.nodes[p.to];
-      ghosts.push({
-        from:s, to:p.to, owner:net.seat, count:k, delivered:0,
-        prog:(now - p.t0) / 1000 * TROOP_SPEED,
-        len: Math.max(8, Math.hypot(t.x - n.x, t.y - n.y) - n.r - t.r * 0.82)
-      });
+      if (k >= 1) c[s] -= k;
     }
   }
-  view = { c, ghosts };
+  view = { c };
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -437,7 +402,7 @@ function nodeAt(p){
   }
   return -1;
 }
-const canPlay = () => net.phase === "live" && net.seat !== null;
+const canPlay = () => (net.phase === "live" || net.phase === "tutorial") && net.seat !== null;
 
 cv.addEventListener("pointerdown", e => {
   if (!canPlay()) return;
@@ -456,7 +421,11 @@ cv.addEventListener("pointermove", e => {
 function release(){
   if (dragging){
     const t = nodeAt({ x:px, y:py });
-    if (t >= 0) issue(sel.filter(s => s !== t), t);
+    if (t >= 0){
+      const from = sel.filter(s => s !== t);
+      if (net.phase === "tutorial") tutSend(from, t);
+      else issue(from, t);
+    }
   }
   dragging = false; sel = [];
 }
@@ -474,15 +443,15 @@ function drawColumn(fl){
   const ang = Math.atan2(b.y - a.y, b.x - a.x);
   const ux = Math.cos(ang), uy = Math.sin(ang);
   const nx = -uy, ny = ux;
-  ctx.fillStyle = c.main;
+  ctx.fillStyle = c.ring;
   for (let i = fl.delivered; i < fl.count; i++){
     const arc = fl.prog - i * TROOP_GAP;
-    if (arc < 0) break;              /* still forming behind the wall */
-    if (arc >= fl.len) continue;     /* landed, waiting on the server */
+    if (arc < 0) break;
+    if (arc >= fl.len) continue;
     const off = (i % 5 - 2) * 4.5;
     const d = a.r + arc;
     ctx.beginPath();
-    ctx.arc(a.x + ux * d + nx * off, a.y + uy * d + ny * off, 3.1, 0, Math.PI * 2);
+    ctx.arc(a.x + ux * d + nx * off, a.y + uy * d + ny * off, 3.2, 0, Math.PI * 2);
     ctx.fill();
   }
 }
@@ -491,8 +460,8 @@ function render(){
   ctx.clearRect(0, 0, W, H);
   if (!G.nodes.length) return;
 
-  ctx.strokeStyle = "rgba(255,255,255,.045)";
-  ctx.lineWidth = 1;
+  ctx.strokeStyle = "rgba(0,0,0,.06)";
+  ctx.lineWidth = 1.5;
   for (const l of G.links){
     const a = G.nodes[l[0]], b = G.nodes[l[1]];
     ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
@@ -501,21 +470,17 @@ function render(){
   if (dragging && sel.length){
     const t = nodeAt({ x:px, y:py });
     const mine = FACTIONS[net.seat] || FACTIONS[0];
-    ctx.setLineDash([5, 7]);
-    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 7]); ctx.lineWidth = 2.5;
     for (const s of sel){
       const a = G.nodes[s];
-      ctx.strokeStyle = (t >= 0 && t !== s) ? mine.main : "rgba(" + mine.glow + ",.35)";
-      ctx.beginPath();
-      ctx.moveTo(a.x, a.y);
-      ctx.lineTo(t >= 0 ? G.nodes[t].x : px, t >= 0 ? G.nodes[t].y : py);
-      ctx.stroke();
+      ctx.strokeStyle = (t >= 0 && t !== s) ? mine.ring : "rgba(" + mine.glow + ",.4)";
+      ctx.beginPath(); ctx.moveTo(a.x, a.y);
+      ctx.lineTo(t >= 0 ? G.nodes[t].x : px, t >= 0 ? G.nodes[t].y : py); ctx.stroke();
     }
     ctx.setLineDash([]);
     if (t >= 0){
       const n = G.nodes[t];
-      ctx.strokeStyle = mine.main;
-      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = mine.ring; ctx.lineWidth = 3;
       ctx.beginPath(); ctx.arc(n.x, n.y, n.r + 9, 0, Math.PI * 2); ctx.stroke();
     }
   }
@@ -526,51 +491,50 @@ function render(){
     const owned = n.owner !== null;
 
     if (owned){
-      const g = ctx.createRadialGradient(n.x, n.y, n.r * .5, n.x, n.y, n.r * 2.5);
-      g.addColorStop(0, "rgba(" + c.glow + ",.20)");
+      const g = ctx.createRadialGradient(n.x, n.y, n.r * .6, n.x, n.y, n.r * 2.15);
+      g.addColorStop(0, "rgba(" + c.glow + ",.16)");
       g.addColorStop(1, "rgba(" + c.glow + ",0)");
       ctx.fillStyle = g;
-      ctx.beginPath(); ctx.arc(n.x, n.y, n.r * 2.5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(n.x, n.y, n.r * 2.15, 0, Math.PI * 2); ctx.fill();
     }
 
     if (n.pulse > 0 && !REDUCED){
-      ctx.strokeStyle = "rgba(" + c.glow + "," + (n.pulse * .5) + ")";
-      ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.arc(n.x, n.y, n.r + (1 - n.pulse) * 26, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = "rgba(" + c.glow + "," + (n.pulse * .6) + ")";
+      ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(n.x, n.y, n.r + (1 - n.pulse) * 24, 0, Math.PI * 2); ctx.stroke();
     }
 
-    ctx.fillStyle = c.dim;
+    ctx.fillStyle = owned ? c.fill : NEUTRAL.fill;
     ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2); ctx.fill();
 
-    ctx.strokeStyle = c.main;
+    ctx.strokeStyle = owned ? c.ring : NEUTRAL.ring;
     ctx.lineWidth = n.home ? 3.4 : 2.2;
-    ctx.globalAlpha = owned ? 1 : .55;
+    ctx.globalAlpha = owned ? 1 : .85;
     ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2); ctx.stroke();
     ctx.globalAlpha = 1;
 
     if (n.tier === 2 && !n.home){
-      ctx.globalAlpha = owned ? .55 : .3;
-      ctx.lineWidth = 1.4;
+      ctx.strokeStyle = owned ? c.ring : NEUTRAL.ring;
+      ctx.globalAlpha = owned ? .45 : .3; ctx.lineWidth = 1.4;
       ctx.beginPath(); ctx.arc(n.x, n.y, n.r - 6, 0, Math.PI * 2); ctx.stroke();
       ctx.globalAlpha = 1;
     }
     if (n.home){
-      ctx.fillStyle = c.main;
-      ctx.globalAlpha = .16;
+      ctx.fillStyle = c.ring; ctx.globalAlpha = .12;
       ctx.beginPath(); ctx.arc(n.x, n.y, n.r - 5, 0, Math.PI * 2); ctx.fill();
       ctx.globalAlpha = 1;
     }
 
     if (n.flash > 0){
-      ctx.fillStyle = "rgba(255,255,255," + (n.flash * .3) + ")";
+      ctx.fillStyle = "rgba(0,0,0," + (n.flash * .10) + ")";
       ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2); ctx.fill();
     }
     if (sel.indexOf(i) >= 0){
-      ctx.strokeStyle = "#fff"; ctx.lineWidth = 2;
+      ctx.strokeStyle = (FACTIONS[net.seat] || FACTIONS[0]).ring; ctx.lineWidth = 2.5;
       ctx.beginPath(); ctx.arc(n.x, n.y, n.r + 6, 0, Math.PI * 2); ctx.stroke();
     }
 
-    ctx.fillStyle = owned ? "#fff" : "rgba(243,245,248,.72)";
+    ctx.fillStyle = owned ? c.ink : NEUTRAL.ink;
     ctx.font = "600 " + (n.home ? 19 : n.tier === 2 ? 17 : n.tier === 1 ? 15 : 13) + "px system-ui, sans-serif";
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.fillText(String(Math.max(0, view.c[i] != null ? view.c[i] : n.count)), n.x, n.y + 1);
@@ -578,7 +542,84 @@ function render(){
   ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
 
   for (const fl of G.flights.values()) drawColumn(fl);
-  for (const fl of view.ghosts)        drawColumn(fl);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Interactive tutorial — a tiny local match, no server
+   ══════════════════════════════════════════════════════════════ */
+const TUT = { flights: [], nextId: 1, step: 0 };
+const TUT_STEPS = [
+  { msg: "This teal circle is your base. <b>Drag from it onto the grey circle</b> to send half its troops.",
+    done: () => G.nodes[1] && G.nodes[1].owner === 0 },
+  { msg: "Nice — you took it, and circles you own slowly grow. Now <b>take the red base</b>. Drag from both of your circles at once if you need more troops.",
+    done: () => G.nodes[2] && G.nodes[2].owner === 0 },
+  { msg: "That's the whole game: send, capture, and hold everything to win. You're ready.",
+    done: null }
+];
+function tutBoard(){
+  G.nodes = [
+    { x:250, y:430, r:31, tier:2, home:true,  owner:0,    count:24, acc:0, cap:99, growth:1.3, pulse:0, flash:0 },
+    { x:505, y:295, r:24, tier:1, home:false, owner:null, count:9,  acc:0, cap:60, growth:0.7, pulse:0, flash:0 },
+    { x:760, y:225, r:30, tier:2, home:true,  owner:1,    count:10, acc:0, cap:99, growth:0.5, pulse:0, flash:0 }
+  ];
+  G.links = [[0,1],[1,2],[0,2]];
+  G.flights.clear();
+  TUT.flights = []; TUT.nextId = 1; TUT.step = 0;
+  G.started = true;
+  net.seat = 0;
+}
+function tutSend(from, to){
+  for (const s of from){
+    const n = G.nodes[s];
+    if (!n || n.owner !== 0 || s === to) continue;
+    const k = Math.floor(n.count * SEND_FRACTION);
+    if (k < 1) continue;
+    n.count -= k;
+    const t = G.nodes[to];
+    TUT.flights.push({ id: TUT.nextId++, from:s, to, owner:0, count:k, delivered:0, prog:0,
+      len: Math.max(8, Math.hypot(t.x - n.x, t.y - n.y) - n.r - t.r * 0.82) });
+  }
+}
+function tutTick(dt){
+  for (const n of G.nodes){
+    if (n.owner === null || n.count >= n.cap) continue;
+    n.acc += n.growth * dt;
+    while (n.acc >= 1){ n.acc -= 1; n.count = Math.min(n.cap, n.count + 1); }
+  }
+  for (let i = TUT.flights.length - 1; i >= 0; i--){
+    const fl = TUT.flights[i];
+    fl.prog += TROOP_SPEED * dt;
+    while (fl.delivered < fl.count && fl.prog - fl.delivered * TROOP_GAP >= fl.len){
+      const n = G.nodes[fl.to];
+      if (n.owner === fl.owner) n.count = Math.min(n.cap, n.count + 1);
+      else if (n.count > 0){ n.count--; n.flash = 1; }
+      else { n.owner = fl.owner; n.count = 1; n.pulse = 1; }
+      fl.delivered++;
+    }
+    if (fl.delivered >= fl.count) TUT.flights.splice(i, 1);
+  }
+  G.flights.clear();
+  for (const fl of TUT.flights) G.flights.set(fl.id, fl);
+
+  const s = TUT_STEPS[TUT.step];
+  if (s && s.done && s.done()){
+    TUT.step++;
+    const nx = TUT_STEPS[TUT.step];
+    if (nx){ $("tutMsg").innerHTML = nx.msg; if (!nx.done) $("tutDone").classList.add("on"); }
+  }
+}
+function startTutorial(){
+  net.phase = "tutorial"; net.code = null; net.owner = false; net.solo = false;
+  pending = []; view = { c:[] };
+  tutBoard();
+  $("tutMsg").innerHTML = TUT_STEPS[0].msg;
+  $("tutDone").classList.remove("on");
+  showStage(); paintHud();
+}
+function exitTutorial(){
+  $("tut").classList.remove("on"); $("tutDone").classList.remove("on");
+  net.phase = "menu"; net.seat = null;
+  G.nodes = []; G.links = []; G.flights.clear(); TUT.flights = [];
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -586,25 +627,18 @@ function render(){
    ══════════════════════════════════════════════════════════════ */
 const shareEl = $("share"), legendEl = $("legend");
 const bars = [], counts = [], names = [];
-
 function buildHud(){
   shareEl.textContent = ""; legendEl.textContent = "";
   bars.length = counts.length = names.length = 0;
   for (let i = 0; i < FACTIONS.length; i++){
     const b = document.createElement("i");
-    b.style.background = FACTIONS[i].main; b.style.width = "0%";
+    b.style.background = FACTIONS[i].ring; b.style.width = "0%";
     shareEl.appendChild(b); bars.push(b);
-
-    const p = document.createElement("span");
-    p.className = "p";
-    const d = document.createElement("span");
-    d.className = "dot"; d.style.background = FACTIONS[i].main;
-    const nm = document.createElement("span");
-    nm.textContent = FACTIONS[i].name;
-    const num = document.createElement("span");
-    num.className = "n"; num.textContent = "0";
-    p.append(d, nm, num);
-    legendEl.appendChild(p);
+    const p = document.createElement("span"); p.className = "p";
+    const d = document.createElement("span"); d.className = "dot"; d.style.background = FACTIONS[i].ring;
+    const nm = document.createElement("span"); nm.textContent = FACTIONS[i].name;
+    const num = document.createElement("span"); num.className = "n"; num.textContent = "0";
+    p.append(d, nm, num); legendEl.appendChild(p);
     counts.push(num); names.push(nm);
   }
   const hint = document.createElement("span");
@@ -612,15 +646,12 @@ function buildHud(){
   hint.textContent = "drag from yours onto anything";
   legendEl.appendChild(hint);
 }
-
 function seatName(seat){
   const p = net.roster.find(x => x.seat === seat);
   if (!p) return "AI";
   return p.live ? p.name : p.name + " (away)";
 }
-
 function paintHud(){
-  /* runs several times a second — only touch the DOM when something moved */
   const title = net.code ? "Holdings &middot; <b>" + net.code + "</b>" : "Holdings";
   if ($("hudTitle").innerHTML !== title) $("hudTitle").innerHTML = title;
   $("restart").style.display = (net.host && net.phase === "live") ? "" : "none";
@@ -637,13 +668,13 @@ function paintHud(){
                      !G.nodes.some(n => n.owner === net.seat) &&
                      ![...G.flights.values()].some(f => f.owner === net.seat);
     const set = (txt, cls) => { if (hint.textContent !== txt){ hint.textContent = txt; hint.className = cls; } };
-    if (!net.ok)                                       { set("reconnecting…", "hint warn"); }
+    if (net.phase === "tutorial")                      { set("tutorial", "hint"); }
+    else if (!net.ok)                                  { set("reconnecting…", "hint warn"); }
     else if (wipedOut)                                 { set("you are out — watching", "hint warn"); }
     else if (net.phase === "live" && net.seat === null){ set("spectating", "hint"); }
     else                                               { set("drag from yours onto anything", "hint"); }
   }
 }
-
 let hudT = 0;
 function hud(dt){
   hudT += dt;
@@ -660,7 +691,6 @@ function hud(dt){
 }
 const fmt = s => Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
 
-/* ── which surface is showing ── */
 function showPanel(id){
   const ov = $("ov");
   for (const p of document.querySelectorAll(".panel")) p.classList.remove("on");
@@ -671,11 +701,12 @@ function showPanel(id){
 function showStage(){
   const p = net.phase;
   $("count").classList.toggle("on", p === "countdown" || (net.solo && p === "lobby"));
+  $("tut").classList.toggle("on", p === "tutorial");
   if (p === "menu")            showPanel("p-menu");
   else if (p === "lobby")      showPanel(net.solo ? null : "p-room");
   else if (p === "countdown")  showPanel(null);
   else if (p === "over")       showOver();
-  else                         showPanel(null);   /* live */
+  else                         showPanel(null);   /* live / tutorial */
 }
 
 let lastCd = -99;
@@ -690,7 +721,7 @@ function paintCountdown(now){
   lastCd = n;
   const el = $("countNum");
   el.textContent = n > 0 ? String(n) : "Go";
-  $("countSub").textContent = n > 0 ? "Get ready" : " ";
+  $("countSub").textContent = n > 0 ? "Get ready" : " ";
   el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop");
 }
 
@@ -704,7 +735,7 @@ function paintRoom(){
     const row = document.createElement("div");
     row.className = "seat" + (p ? "" : " empty") + (p && p.pid === net.pid ? " mine" : "");
     const d = document.createElement("span");
-    d.className = "dot"; d.style.background = FACTIONS[s].main; d.style.color = FACTIONS[s].main;
+    d.className = "dot"; d.style.background = FACTIONS[s].ring;
     const who = document.createElement("span");
     who.className = "who";
     who.textContent = p ? (p.name + (p.pid === net.pid ? " (you)" : "")) : "Open — played by AI";
@@ -725,8 +756,6 @@ function paintRoom(){
     row.textContent = specs.length + (specs.length === 1 ? " person watching" : " people watching");
     box.appendChild(row);
   }
-
-  /* ready count across present, seated players who aren't the host */
   const others = net.roster.filter(p => p.seat !== null && p.live && !(net.host && p.pid === net.pid));
   const guests = net.host ? others : others.filter(p => p.pid !== net.pid);
   const readyN = guests.filter(p => p.ready).length;
@@ -734,18 +763,16 @@ function paintRoom(){
   const start = $("btnStart"), ready = $("btnReady");
   start.style.display = net.host ? "" : "none";
   ready.style.display = net.host ? "none" : "";
-  if (net.host){
-    start.textContent = guests.length ? ("Start · " + readyN + "/" + guests.length + " ready") : "Start";
-  } else {
+  if (net.host) start.textContent = guests.length ? ("Start · " + readyN + "/" + guests.length + " ready") : "Start";
+  else {
     ready.textContent = net.ready ? "Ready ✓" : "I'm ready";
     ready.className = "btn " + (net.ready ? "ready-on" : "tinted");
   }
   $("waitMsg").textContent = net.host
     ? "You can start whenever you like"
     : (net.ready ? "Waiting for the host to start" : "Tap ready when you are set");
-
   $("btnAgain").style.display = net.host ? "" : "none";
-  $("againMsg").textContent = net.host ? " " : "Waiting for the host";
+  $("againMsg").textContent = net.host ? " " : "Waiting for the host";
 }
 
 function showOver(){
@@ -763,18 +790,12 @@ function showOver(){
 /* ══════════════════════════════════════════════════════════════
    Joining and hosting
    ══════════════════════════════════════════════════════════════ */
-/* Per-tab id so a second tab never fights the first over the same seat. */
 let tabId = "";
 try { tabId = sessionStorage.getItem("holdings.tab") || ""; } catch (e){}
-if (!tabId){
-  tabId = Math.random().toString(36).slice(2);
-  try { sessionStorage.setItem("holdings.tab", tabId); } catch (e){}
-}
-const HOLD_FRESH = 15000;   /* a tab heartbeating within this window still owns its seat */
+if (!tabId){ tabId = Math.random().toString(36).slice(2); try { sessionStorage.setItem("holdings.tab", tabId); } catch (e){} }
+const HOLD_FRESH = 15000;
 
-function loadSaved(){
-  try { return JSON.parse(localStorage.getItem("holdings") || "null"); } catch (e){ return null; }
-}
+function loadSaved(){ try { return JSON.parse(localStorage.getItem("holdings") || "null"); } catch (e){ return null; } }
 function resumablePid(code){
   const s = loadSaved();
   if (!s || s.code !== code) return null;
@@ -787,31 +808,32 @@ function otherTabHolds(code){
 }
 function remember(){
   try {
-    if (net.owner) localStorage.setItem("holdings",
-      JSON.stringify({ code:net.code, pid:net.pid, tab:tabId, ts:Date.now() }));
+    if (net.owner) localStorage.setItem("holdings", JSON.stringify({ code:net.code, pid:net.pid, tab:tabId, ts:Date.now() }));
     localStorage.setItem("holdings.name", nameVal());
   } catch (e){}
 }
 function enterRoom(code, pid, own){
-  net.code = code; net.pid = pid;
-  net.owner = own !== false;
-  reAttempts = 0;
+  net.code = code; net.pid = pid; net.owner = own !== false; reAttempts = 0;
   remember();
   history.replaceState(null, "", location.pathname + "?r=" + code);
-  connect();
-  paintHud();
+  connect(); paintHud();
 }
 setInterval(() => { if (net.owner && net.code) remember(); }, 5000);
 
-$("btnPlay").addEventListener("click", async () => {
+async function playSolo(){
   $("menuErr").textContent = "";
   net.solo = true;
   const r = await api("create", { name: nameVal(), code:null, pid:null });
-  if (!r.ok){ net.solo = false; return ($("menuErr").textContent = r.error || "Could not start."); }
+  if (!r.ok){ net.solo = false; $("menuErr").textContent = r.error || "Could not start."; showStage(); return; }
   enterRoom(r.code, r.pid);
   const s = await api("start");
   if (!s.ok){ net.solo = false; showStage(); }
-});
+}
+
+$("btnPlay").addEventListener("click", playSolo);
+$("btnTut").addEventListener("click", startTutorial);
+$("tutSkip").addEventListener("click", () => { exitTutorial(); showStage(); });
+$("tutPlay").addEventListener("click", () => { exitTutorial(); playSolo(); });
 
 $("btnCreate").addEventListener("click", async () => {
   $("menuErr").textContent = "";
@@ -838,8 +860,7 @@ async function doJoin(raw){
 
 $("btnStart").addEventListener("click", () => api("start"));
 $("btnReady").addEventListener("click", async () => {
-  net.ready = !net.ready;          /* optimistic — the roster confirms */
-  paintRoom();
+  net.ready = !net.ready; paintRoom();
   await api("ready", { ready: net.ready });
 });
 $("btnAgain").addEventListener("click", () => api("restart"));
@@ -862,23 +883,18 @@ $("leave").addEventListener("click", () => {
   if (net.owner) try { localStorage.removeItem("holdings"); } catch (e){}
   net.code = net.pid = null; net.seat = null; net.phase = "menu"; net.roster = [];
   net.owner = false; net.solo = false; net.ready = false;
-  G.nodes = []; G.links = []; G.flights.clear(); pending = []; view = { c:[], ghosts:[] };
+  G.nodes = []; G.links = []; G.flights.clear(); pending = []; view = { c:[] };
   history.replaceState(null, "", location.pathname);
-  paintHud();
-  showPanel("p-menu");
+  paintHud(); showPanel("p-menu");
 });
 
-/* Restart is two-step while a match is live: the first press arms it, a
-   second within 2.6s commits. It throws away everyone's run, not just ours. */
 const restartBtn = $("restart");
 let armed = 0;
 function disarm(){ armed = 0; restartBtn.classList.remove("armed"); restartBtn.textContent = "Restart"; }
 function hitRestart(){
   if (!net.host || net.phase !== "live") return;
   if (armed > 0){ disarm(); api("restart"); return; }
-  armed = 2.6;
-  restartBtn.classList.add("armed");
-  restartBtn.textContent = "Sure?";
+  armed = 2.6; restartBtn.classList.add("armed"); restartBtn.textContent = "Sure?";
 }
 restartBtn.addEventListener("click", hitRestart);
 addEventListener("keydown", e => {
@@ -924,6 +940,8 @@ let last = performance.now();
   if (net.phase === "live"){
     for (const fl of G.flights.values()) fl.prog += TROOP_SPEED * dt;
     G.elapsed += dt;
+  } else if (net.phase === "tutorial"){
+    tutTick(dt);
   }
   paintCountdown(now);
   rebuild();
