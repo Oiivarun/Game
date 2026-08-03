@@ -253,7 +253,8 @@ const net = { code:null, pid:null, seat:null, host:false, hostPid:null, phase:"m
 const G = { nodes: [], links: [], flights: new Map(), elapsed: 0, started: false, seed: null };
 let pending = [];
 let cid = 0;
-let view = { c: [], ghosts: [] };
+let lastAck = 0;   /* highest order id the server has applied — stop predicting past it */
+let view = { c: [], ghosts: [], hide: new Set() };
 let sel = [], dragging = false, px = 0, py = 0;
 
 /* ── pre-rendered sprites — drawImage each frame instead of building a radial
@@ -365,7 +366,7 @@ function onInit(d){
   }));
   G.links = d.links;
   if (!same) G.flights.clear();
-  pending = [];
+  pending = []; lastAck = 0;
   G.started = true;
   net.seat = d.seat;
   paintHud();
@@ -374,6 +375,7 @@ function onInit(d){
 function onState(d){
   if (net.phase === "tutorial" || !G.nodes.length) return;
   if (d.ack > cid) cid = d.ack;   /* stay ahead of the server after a reload */
+  lastAck = Math.max(lastAck, d.ack || 0);
   for (let i = 0; i < G.nodes.length; i++){
     const n = G.nodes[i];
     const owner = d.n[i*2] < 0 ? null : d.n[i*2];
@@ -421,23 +423,29 @@ function rebuild(){
   const now = performance.now();
   const c = G.nodes.map(n => n.count);
   const ghosts = [];
+  const hide = new Set();
   const alive = [];
   for (const p of pending){
     if (now - p.t0 > PRED_TTL) continue;
     const prog = (now - p.t0) / 1000 * TROOP_SPEED;
-    let moving = false;
+    const confirmed = p.cid <= lastAck;   /* server has applied it → its count is truth */
+    let keep = false;
     for (const leg of p.legs){
       const lastArrive = leg.len + (leg.k - 1) * TROOP_GAP;
-      if (prog <= lastArrive + 24){               /* still in flight → predict it */
-        if (c[leg.from] != null) c[leg.from] = Math.max(0, c[leg.from] - leg.k);
+      /* subtract locally ONLY while unconfirmed — never on top of the server's
+         own reduction, which is what dropped the number to 0 */
+      if (!confirmed && c[leg.from] != null){ c[leg.from] = Math.max(0, c[leg.from] - leg.k); keep = true; }
+      /* animate the column until it visually lands, hiding the server's echo of it */
+      if (prog <= lastArrive + 24){
         ghosts.push({ from:leg.from, to:p.to, owner:net.seat, count:leg.k, delivered:0, prog, len:leg.len });
-        moving = true;
+        hide.add(leg.from + ">" + p.to);
+        keep = true;
       }
     }
-    if (moving) alive.push(p);                     /* landed → let the server's count stand */
+    if (keep) alive.push(p);
   }
   pending = alive;
-  view = { c, ghosts };
+  view = { c, ghosts, hide };
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -611,10 +619,8 @@ function render(){
   /* draw the server's columns, but hide its echo of the orders we're already
      predicting — that duplicate, delayed by the round-trip, was the "travels
      twice" effect. Our own predicted columns are drawn on top. */
-  const mineInFlight = new Set();
-  for (const p of pending) for (const leg of p.legs) mineInFlight.add(leg.from + ">" + p.to);
   for (const fl of G.flights.values()){
-    if (fl.owner === net.seat && mineInFlight.has(fl.from + ">" + fl.to)) continue;
+    if (fl.owner === net.seat && view.hide.has(fl.from + ">" + fl.to)) continue;
     drawColumn(fl);
   }
   for (const g of view.ghosts) drawColumn(g);
@@ -680,7 +686,7 @@ function tutTick(dt){
 }
 function startTutorial(){
   net.phase = "tutorial"; net.code = null; net.owner = false; net.solo = false;
-  pending = []; view = { c:[], ghosts:[] };
+  pending = []; lastAck = 0; view = { c:[], ghosts:[], hide:new Set() };
   tutBoard();
   $("tutMsg").innerHTML = TUT_STEPS[0].msg;
   $("tutDone").classList.remove("on");
@@ -953,7 +959,7 @@ $("leave").addEventListener("click", () => {
   if (net.owner) try { localStorage.removeItem("holdings"); } catch (e){}
   net.code = net.pid = null; net.seat = null; net.phase = "menu"; net.roster = [];
   net.owner = false; net.solo = false; net.ready = false;
-  G.nodes = []; G.links = []; G.flights.clear(); G.elapsed = 0; pending = []; view = { c:[], ghosts:[] };
+  G.nodes = []; G.links = []; G.flights.clear(); G.elapsed = 0; pending = []; lastAck = 0; view = { c:[], ghosts:[], hide:new Set() };
   history.replaceState(null, "", location.pathname);
   paintHud(); showStage();
 });
