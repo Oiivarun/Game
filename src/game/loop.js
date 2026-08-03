@@ -1,7 +1,7 @@
 'use strict';
 const { SIM_DT, NET_EVERY, ROOM_IDLE_MS, LOBBY_TIMEOUT } = require('../config');
 const { rooms } = require('./rooms');
-const { step } = require('./sim');
+const { step, finalizePicks } = require('./sim');
 const { broadcastState, broadcastLobby } = require('../net/protocol');
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -10,6 +10,9 @@ const { broadcastState, broadcastLobby } = require('../net/protocol');
    ══════════════════════════════════════════════════════════════════════════ */
 
 function tick(room){
+  /* nobody left choosing a start in time → finish the picks for them */
+  if (room.phase === "pick" && Date.now() >= room.pickEnd) finalizePicks(room);
+
   /* the countdown is driven here so every client goes live on the same tick */
   if (room.phase === "countdown" && Date.now() >= room.goLiveAt){
     room.phase = "live";

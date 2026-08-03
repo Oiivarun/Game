@@ -61,13 +61,24 @@ const check = (label, ok, detail) => {
   check("only the host may start", refused.ok === false, refused.error);
 
   await post({ action:"start", code:A.code, pid:A.pid });
-  await wait(600);
-  check("map delivered once", log.B.init && log.B.init.nodes.length === EXPECT, EXPECT + " nodes");
+  await wait(400);
+  check("pick phase opened", log.B.lobby.phase === "pick", log.B.lobby.phase);
+  const cand = [];
+  log.B.init.nodes.forEach((n, i) => { if (n[5]) cand.push(i); });
+  check("start blocks offered", cand.length >= 3, cand.length + " blocks");
+
+  await post({ action:"pick", code:A.code, pid:A.pid, node: cand[0] });
+  const dup = await post({ action:"pick", code:A.code, pid:B.pid, node: cand[0] });
+  check("a locked block can't be taken twice", dup.ok === false, dup.error);
+  await post({ action:"pick", code:A.code, pid:B.pid, node: cand[1] });
+  await wait(400);
+  check("map delivered", log.B.init && log.B.init.nodes.length === EXPECT, EXPECT + " nodes");
   check("snapshots flowing", !!log.B.state && log.B.state.n.length === EXPECT * 2);
 
-  /* the match opens with a shared countdown — wait for it to flip to live */
-  await wait(COUNTDOWN_MS);
-  check("match went live after the countdown", log.B.state.phase === "live", log.B.state.phase);
+  /* both picked → countdown → live */
+  await wait(COUNTDOWN_MS + 200);
+  check("match went live after picking", log.B.state.phase === "live", log.B.state.phase);
+  check("my start became my home", log.B.state.n[cand[1]*2] === log.B.init.seat, "seat " + log.B.state.n[cand[1]*2]);
 
   const st = log.B.state, seat = log.B.init.seat;
   const mine = [], theirs = [];

@@ -31,7 +31,7 @@ function broadcastLobby(room){
 function sendInit(room, player){
   pushEvent(player, "init", {
     seed: room.seed,
-    nodes: room.nodes.map(n => [Math.round(n.x), Math.round(n.y), n.r, n.tier, n.home ? 1 : 0]),
+    nodes: room.nodes.map(n => [Math.round(n.x), Math.round(n.y), n.r, n.tier, n.home ? 1 : 0, n.candidate ? 1 : 0]),
     links: room.links,
     seat: player.seat
   });

@@ -33,6 +33,9 @@ function makeRoom(){
     nextFlight: 1,
     elapsed: 0,
     goLiveAt: 0,             /* when a countdown flips the room to live      */
+    candidates: [],          /* node indices players may pick as a start     */
+    picks: {},               /* seat -> chosen node index                    */
+    pickEnd: 0,              /* deadline for the pick phase                  */
     winner: undefined,
     aiClock: new Array(SEATS).fill(0),
     tickN: 0,

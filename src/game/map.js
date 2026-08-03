@@ -32,36 +32,34 @@ function generate(room){
     const x = rr(PAD, W - PAD), y = rr(PAD, H - PAD);
     let ok = true;
     for (const n of nodes) if (Math.hypot(n.x - x, n.y - y) < MIN_D){ ok = false; break; }
-    if (ok) nodes.push({ x, y, owner:null, count:0, acc:0, tier:0, home:false, r:0, growth:0, cap:0 });
+    if (ok) nodes.push({ x, y, owner:null, count:0, acc:0, tier:0, home:false, candidate:false, r:0, growth:0, cap:0 });
   }
 
-  /* homes: greedy farthest-point selection */
-  const homes = [ nodes[(rnd() * nodes.length) | 0] ];
-  while (homes.length < SEATS){
+  /* start candidates: a few more than there are seats, chosen far apart, so
+     players get a real choice of where to begin. They lock these in during the
+     pick phase; whatever is left over becomes a neutral stronghold. */
+  const K = Math.min(nodes.length - 2, SEATS + 3);
+  const cand = [ nodes[(rnd() * nodes.length) | 0] ];
+  while (cand.length < K){
     let best = null, bestD = -1;
     for (const n of nodes){
-      if (homes.indexOf(n) >= 0) continue;
+      if (cand.indexOf(n) >= 0) continue;
       let d = Infinity;
-      for (const h of homes) d = Math.min(d, dist(n, h));
+      for (const h of cand) d = Math.min(d, dist(n, h));
       if (d > bestD){ bestD = d; best = n; }
     }
-    homes.push(best);
+    cand.push(best);
   }
-  for (let i = homes.length - 1; i > 0; i--){          /* shuffle: see above */
-    const j = (rnd() * (i + 1)) | 0;
-    const t = homes[i]; homes[i] = homes[j]; homes[j] = t;
-  }
-  homes.forEach((n, i) => {
-    n.home = true; n.tier = 2; n.owner = i;
-    n.r = HOME.r; n.growth = HOME.growth; n.cap = HOME.cap;
-    n.count = 22;
+  cand.forEach(n => {
+    n.candidate = true; n.tier = 2; n.home = false; n.owner = null;
+    n.r = HOME.r; n.growth = HOME.growth; n.cap = HOME.cap; n.count = 0;
   });
 
-  /* the free nodes most equidistant from every home become the big prizes */
-  const free = nodes.filter(n => !n.home);
+  /* the remaining nodes most equidistant from every candidate are the prizes */
+  const free = nodes.filter(n => !n.candidate);
   for (const n of free){
     let sum = 0, min = Infinity;
-    for (const h of homes){ const d = dist(n, h); sum += d; min = Math.min(min, d); }
+    for (const h of cand){ const d = dist(n, h); sum += d; min = Math.min(min, d); }
     n._score = min * 2 + sum * 0.1;
   }
   free.sort((a, b) => b._score - a._score);
@@ -93,6 +91,9 @@ function generate(room){
   room.nextFlight = 1;
   room.elapsed = 0;
   room.winner = undefined;
+  room.candidates = [];
+  for (let i = 0; i < nodes.length; i++) if (nodes[i].candidate) room.candidates.push(i);
+  room.picks = {};
   for (let i = 0; i < SEATS; i++) room.aiClock[i] = 1.4 + rnd() * 1.6;
 }
 

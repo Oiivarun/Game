@@ -3,10 +3,10 @@ const http = require('http');
 const fs   = require('fs');
 const path = require('path');
 
-const { PUBDIR, SEATS, MAX_ROOMS, COUNTDOWN_MS } = require('../config');
+const { PUBDIR, SEATS, MAX_ROOMS, PICK_TIMEOUT } = require('../config');
 const { rooms, newId, makeRoom, seatOf, assignSeats } = require('../game/rooms');
 const { generate } = require('../game/map');
-const { send } = require('../game/sim');
+const { send, setHome, maybeFinishPicks } = require('../game/sim');
 const { startLoop } = require('../game/loop');
 const { pushEvent, roster, broadcastLobby, sendInit, broadcastInit, broadcastState } = require('./protocol');
 
@@ -73,7 +73,7 @@ setInterval(() => {
    suite behave exactly as before. */
 const dns = require('dns').promises;
 const MACHINE = process.env.FLY_MACHINE_ID || "";
-const NEEDS_ROOM = new Set(["join", "name", "ready", "start", "restart", "send", "leave"]);
+const NEEDS_ROOM = new Set(["join", "name", "ready", "start", "restart", "pick", "send", "leave"]);
 let peers = [], peersAt = 0;
 async function getPeers(){
   if (!MACHINE) return [];
@@ -165,14 +165,30 @@ function handleCmd(body){
     room.seed = (Math.random() * 1e9) | 0;
     assignSeats(room);
     generate(room);
-    /* open with a shared countdown; loop.tick flips everyone to live together */
-    room.phase = "countdown";
-    room.goLiveAt = Date.now() + COUNTDOWN_MS;
+    /* players choose where to start; finalizePicks then opens the countdown */
+    room.phase = "pick";
+    room.pickEnd = Date.now() + PICK_TIMEOUT;
     for (const p of room.players.values()){ p.ack = 0; p.execCid = 0; }
     broadcastLobby(room);
     broadcastInit(room);
     broadcastState(room);
     return { ok:true };
+  }
+
+  if (action === "pick"){
+    if (room.phase !== "pick") return { ok:false, error:"Not choosing a start now." };
+    const seat = seatOf(room, me.pid);
+    if (seat === null) return { ok:false, error:"Spectators can't pick." };
+    if (room.picks[seat] !== undefined) return { ok:false, error:"You already chose." };
+    const idx = body.node | 0;
+    if (room.candidates.indexOf(idx) < 0) return { ok:false, error:"Tap a highlighted circle." };
+    if (room.nodes[idx].owner !== null) return { ok:false, error:"That one's taken." };
+    room.picks[seat] = idx;
+    setHome(room, idx, seat);
+    broadcastLobby(room);
+    broadcastState(room);
+    maybeFinishPicks(room);
+    return { ok:true, node: idx };
   }
 
   if (action === "send"){

@@ -1,8 +1,49 @@
 'use strict';
-const { SEATS, SEND_FRACTION, TROOP_SPEED, TROOP_GAP, MATCH_CAP } = require('../config');
+const { SEATS, SEND_FRACTION, TROOP_SPEED, TROOP_GAP, MATCH_CAP, COUNTDOWN_MS, TIER, HOME } = require('../config');
 const { dist } = require('./map');
 const { isBot } = require('./rooms');
-const { broadcastLobby } = require('../net/protocol');
+const { broadcastLobby, broadcastInit, broadcastState } = require('../net/protocol');
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Start picks
+   Players choose a start node during the "pick" phase; unchosen candidates
+   fall to the AI, then anything still spare becomes a neutral stronghold.
+   ══════════════════════════════════════════════════════════════════════════ */
+function setHome(room, idx, seat){
+  const n = room.nodes[idx];
+  n.owner = seat; n.home = true; n.candidate = true;   /* candidate flag clears at finalize */
+  n.r = HOME.r; n.growth = HOME.growth; n.cap = HOME.cap; n.count = 22; n.acc = 0;
+}
+function maybeFinishPicks(room){
+  const humans = [...room.players.values()].filter(p => p.live && p.seat !== null);
+  if (humans.length && humans.every(p => room.picks[p.seat] !== undefined)) finalizePicks(room);
+}
+function finalizePicks(room){
+  if (room.phase !== "pick") return;
+  const rnd = room.rng || (() => Math.random());
+  const taken = new Set(Object.values(room.picks));
+  const avail = room.candidates.filter(i => !taken.has(i));
+  /* every seat needs a home — the AI takes a random spare candidate */
+  for (let s = 0; s < SEATS; s++){
+    if (room.picks[s] !== undefined || !avail.length) continue;
+    const idx = avail.splice((rnd() * avail.length) | 0, 1)[0];
+    room.picks[s] = idx; setHome(room, idx, s);
+  }
+  /* leftover candidates become neutral strongholds */
+  for (const i of room.candidates){
+    const n = room.nodes[i];
+    n.candidate = false;
+    if (n.owner === null){
+      const t = TIER[2];
+      n.tier = 2; n.home = false; n.r = t.r; n.growth = t.growth; n.cap = t.cap;
+      n.count = t.start[0] + ((rnd() * (t.start[1] - t.start[0] + 1)) | 0); n.acc = 0;
+    }
+  }
+  room.phase = "countdown";
+  room.goLiveAt = Date.now() + COUNTDOWN_MS;
+  for (const p of room.players.values()){ p.ack = 0; p.execCid = 0; }
+  broadcastLobby(room); broadcastInit(room); broadcastState(room);
+}
 
 /* ══════════════════════════════════════════════════════════════════════════
    Simulation
@@ -158,4 +199,4 @@ function step(room, dt){
   }
 }
 
-module.exports = { send, land, think, step };
+module.exports = { send, land, think, step, setHome, maybeFinishPicks, finalizePicks };

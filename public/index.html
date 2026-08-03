@@ -3,24 +3,28 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Holdings</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='11' fill='none' stroke='%230E9F8C' stroke-width='3'/%3E%3C/svg%3E">
-<meta name="theme-color" content="#F5F5F7">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='11' fill='none' stroke='%233ED6C0' stroke-width='3'/%3E%3C/svg%3E">
+<meta name="theme-color" content="#05060A">
 <!-- system fonts only — no external requests (privacy + reliability) -->
 
 <style>
 :root{
-  --bg:#F5F5F7; --surface:#FFFFFF; --ink:#1D1D1F;
-  --muted:rgba(29,29,31,.62); --faint:rgba(29,29,31,.42); --ghost:rgba(29,29,31,.28);
-  --line:rgba(0,0,0,.10); --line-2:rgba(0,0,0,.16);
-  --field:rgba(0,0,0,.045);
-  --accent:#12B39B; --accent-press:#0E9A86; --danger:#E5484D; --warn:#B26A00;
-  --shadow:0 12px 40px -14px rgba(0,0,0,.22);
+  --ink:#EAECEF;
+  --muted:rgba(234,236,239,.6); --faint:rgba(234,236,239,.4); --ghost:rgba(234,236,239,.24);
+  --line:rgba(255,255,255,.09); --line-2:rgba(255,255,255,.16);
+  --field:rgba(255,255,255,.05);
+  --accent:#3ED6C0; --accent-ink:#04231F; --danger:#FF5A6E; --warn:#FFC53D;
+  --card:rgba(16,19,26,.74);
   --r:18px;
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;overflow:hidden;-webkit-tap-highlight-color:transparent}
 body{
-  background:var(--bg);color:var(--ink);
+  background:
+    radial-gradient(1200px 700px at 50% -15%, rgba(62,214,192,.10), transparent 55%),
+    radial-gradient(1000px 800px at 92% 115%, rgba(185,140,255,.10), transparent 55%),
+    #05060A;
+  color:var(--ink);
   font-family:system-ui,-apple-system,'SF Pro Text','Segoe UI',Roboto,Helvetica,Arial,sans-serif;
   -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
   display:flex;align-items:center;justify-content:center;padding:18px;
@@ -29,51 +33,53 @@ body{
 
 /* ── top bar ── */
 .hud{display:flex;align-items:center;gap:14px;padding:0 4px;height:28px}
-.brand{font-size:15px;font-weight:600;letter-spacing:-.02em;color:var(--ink);white-space:nowrap}
-.brand b{color:var(--accent-press);font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:.02em}
-.share{flex:1;display:flex;height:6px;border-radius:6px;overflow:hidden;background:rgba(0,0,0,.07);min-width:60px}
+.brand{font-size:15px;font-weight:600;letter-spacing:-.02em;color:var(--muted);white-space:nowrap}
+.brand b{color:var(--accent);font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.share{flex:1;display:flex;height:6px;border-radius:6px;overflow:hidden;background:rgba(255,255,255,.07);min-width:60px}
 .share i{display:block;height:100%;transition:width .45s cubic-bezier(.3,1,.4,1)}
 .timer{font-size:14px;font-weight:500;color:var(--faint);font-variant-numeric:tabular-nums;min-width:44px;text-align:right}
 
 /* ── board ── */
 .board{
-  position:relative;border-radius:var(--r);overflow:hidden;
-  background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);
+  position:relative;border-radius:22px;overflow:hidden;
+  background:#080B12;border:1px solid var(--line);
+  box-shadow:0 40px 90px -40px rgba(0,0,0,.95), inset 0 1px 0 rgba(255,255,255,.04);
 }
-canvas{display:block;width:100%;height:auto;touch-action:none;cursor:crosshair;background:var(--surface)}
+canvas{display:block;width:100%;height:auto;touch-action:none;cursor:crosshair}
 
-/* ── countdown over the board ── */
-.count{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:6px;pointer-events:none;background:rgba(255,255,255,.58);backdrop-filter:blur(3px);z-index:3}
+/* ── countdown ── */
+.count{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:6px;pointer-events:none;background:rgba(5,6,10,.45);backdrop-filter:blur(2px);z-index:3}
 .count.on{display:flex}
-.count-num{font-size:150px;font-weight:700;letter-spacing:-.04em;line-height:1;color:var(--ink)}
+.count-num{font-size:150px;font-weight:700;letter-spacing:-.04em;line-height:1;color:#fff;text-shadow:0 20px 60px rgba(0,0,0,.7)}
 .count-num.pop{animation:cdpop .42s cubic-bezier(.2,.9,.3,1)}
 @keyframes cdpop{from{transform:scale(1.35);opacity:0}to{transform:scale(1);opacity:1}}
 .count-sub{font-size:15px;font-weight:500;color:var(--muted)}
 
-/* ── interactive tutorial layer ── */
-.tut{position:absolute;inset:0;display:none;z-index:2;pointer-events:none}
-.tut.on{display:block}
-.tut-top{position:absolute;top:16px;left:16px;right:16px;display:flex;gap:10px;align-items:flex-start}
-.tut-msg{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px 16px;font-size:14.5px;line-height:1.45;color:var(--ink);box-shadow:var(--shadow);pointer-events:auto;animation:rise .3s cubic-bezier(.2,.9,.3,1)}
-.tut-msg b{color:var(--accent-press)}
-.tut-top .mini{pointer-events:auto;flex:none}
-.tut-done{position:absolute;left:0;right:0;bottom:26px;display:none;justify-content:center}
-.tut-done.on{display:flex}
-.tut-done .btn{width:auto;pointer-events:auto}
+/* ── banners (tutorial / pick) ── */
+.layer{position:absolute;inset:0;display:none;z-index:2;pointer-events:none}
+.layer.on{display:block}
+.banner-top{position:absolute;top:16px;left:16px;right:16px;display:flex;gap:10px;align-items:flex-start}
+.banner{flex:1;background:var(--card);border:1px solid var(--line-2);border-radius:14px;padding:13px 16px;font-size:14.5px;line-height:1.45;color:var(--ink);box-shadow:0 20px 50px -20px rgba(0,0,0,.8);backdrop-filter:blur(12px);pointer-events:auto;animation:rise .3s cubic-bezier(.2,.9,.3,1)}
+.banner b{color:var(--accent)}
+.banner-top .mini{pointer-events:auto;flex:none}
+.done-cta{position:absolute;left:0;right:0;bottom:26px;display:none;justify-content:center}
+.done-cta.on{display:flex}
+.done-cta .btn{width:auto;pointer-events:auto}
 
 /* ── overlay + panels ── */
-.overlay{position:absolute;inset:0;display:none;place-items:center;padding:20px;background:rgba(245,245,247,.72);backdrop-filter:blur(16px) saturate(1.1);z-index:4}
+.overlay{position:absolute;inset:0;display:none;place-items:center;padding:20px;background:rgba(5,6,10,.24);z-index:4}
 .overlay.on{display:grid}
 .panel{
   display:none;width:100%;max-width:400px;padding:32px 28px;
-  background:var(--surface);border:1px solid var(--line);border-radius:22px;
-  box-shadow:0 30px 70px -26px rgba(0,0,0,.28);
+  background:rgba(13,16,24,.9);border:1px solid rgba(255,255,255,.13);border-radius:22px;
+  box-shadow:0 40px 100px -24px rgba(0,0,0,.95), 0 0 70px -24px rgba(62,214,192,.28), inset 0 1px 0 rgba(255,255,255,.07);
+  backdrop-filter:blur(16px);
   animation:rise .34s cubic-bezier(.2,.9,.3,1);
 }
 .panel.on{display:block}
 @keyframes rise{from{opacity:0;transform:translateY(10px) scale(.99)}to{opacity:1;transform:none}}
 
-.logo{font-size:32px;font-weight:700;letter-spacing:-.035em;margin:0 0 6px;text-align:center}
+.logo{font-size:33px;font-weight:700;letter-spacing:-.035em;margin:0 0 6px;text-align:center}
 .tag{margin:0 0 24px;font-size:15px;color:var(--muted);line-height:1.5;text-align:center}
 .panel h2{font-size:27px;font-weight:700;letter-spacing:-.03em;margin:0 0 8px;text-align:center}
 .panel .lead{margin:0 0 22px;font-size:15px;color:var(--muted);line-height:1.5;text-align:center}
@@ -85,18 +91,18 @@ canvas{display:block;width:100%;height:auto;touch-action:none;cursor:crosshair;b
 .btn+.btn{margin-top:10px}
 .btn:active{transform:scale(.98)}
 .btn:disabled{opacity:.45;cursor:default}
-.btn.primary{background:var(--accent);color:#fff;box-shadow:0 10px 26px -12px rgba(18,179,155,.95)}
-.btn.primary:hover{background:var(--accent-press)}
-.btn.tinted{background:rgba(0,0,0,.05);color:var(--ink);border-color:var(--line)}
-.btn.tinted:hover{background:rgba(0,0,0,.08)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);box-shadow:0 12px 30px -12px rgba(62,214,192,.8)}
+.btn.primary:hover{background:#4fe0cb}
+.btn.tinted{background:rgba(255,255,255,.08);color:var(--ink);border-color:var(--line-2)}
+.btn.tinted:hover{background:rgba(255,255,255,.12)}
 .btn.ghost{background:transparent;color:var(--muted);border-color:var(--line-2)}
-.btn.ghost:hover{color:var(--ink);border-color:rgba(0,0,0,.28)}
-.btn.ready-on{background:rgba(18,179,155,.12);color:var(--accent-press);border-color:rgba(18,179,155,.5)}
-.btn.link{background:none;border:none;color:var(--accent-press);font-size:14px;font-weight:500;padding:10px;width:auto;margin:4px auto 0}
+.btn.ghost:hover{color:var(--ink);border-color:rgba(255,255,255,.3)}
+.btn.ready-on{background:rgba(62,214,192,.16);color:var(--accent);border-color:rgba(62,214,192,.5)}
+.btn.link{background:none;border:none;color:var(--accent);font-size:14px;font-weight:500;padding:10px;width:auto;margin:4px auto 0}
 .btn.link:hover{text-decoration:underline}
 
 .field{font-family:inherit;font-size:16px;font-weight:500;color:var(--ink);background:var(--field);border:1px solid var(--line-2);border-radius:14px;padding:14px 16px;width:100%;outline:none;transition:border-color .15s, background .15s, box-shadow .15s}
-.field:focus{border-color:var(--accent);background:#fff;box-shadow:0 0 0 4px rgba(18,179,155,.14)}
+.field:focus{border-color:var(--accent);background:rgba(255,255,255,.07);box-shadow:0 0 0 4px rgba(62,214,192,.14)}
 .field::placeholder{color:var(--ghost)}
 #name{margin-bottom:14px}
 .join{display:flex;gap:8px}
@@ -107,15 +113,15 @@ canvas{display:block;width:100%;height:auto;touch-action:none;cursor:crosshair;b
 .divider{display:flex;align-items:center;gap:12px;margin:18px 0 14px;color:var(--faint);font-size:12.5px}
 .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
 
-.code-badge{font-size:46px;font-weight:700;letter-spacing:.14em;padding-left:.14em;text-align:center;color:var(--accent-press);margin:0 0 4px;cursor:pointer}
+.code-badge{font-size:46px;font-weight:700;letter-spacing:.14em;padding-left:.14em;text-align:center;color:var(--accent);margin:0 0 4px;cursor:pointer}
 .sub{font-size:13px;color:var(--faint);text-align:center;margin:0 0 22px}
 .seats{display:flex;flex-direction:column;gap:8px;margin:0 0 18px;text-align:left}
-.seat{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:13px;background:rgba(0,0,0,.035);border:1px solid transparent;font-size:14.5px}
-.seat.mine{border-color:var(--line-2);background:rgba(0,0,0,.05)}
-.seat .dot{width:11px;height:11px;border-radius:50%;flex:none}
+.seat{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:13px;background:rgba(255,255,255,.04);border:1px solid transparent;font-size:14.5px}
+.seat.mine{border-color:var(--line-2);background:rgba(255,255,255,.06)}
+.seat .dot{width:11px;height:11px;border-radius:50%;flex:none;box-shadow:0 0 10px -1px currentColor}
 .seat .who{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:450}
 .seat .badge{font-size:11.5px;font-weight:600;color:var(--faint);white-space:nowrap}
-.seat .badge.on{color:var(--accent-press)}
+.seat .badge.on{color:var(--accent)}
 .seat .badge.away{color:var(--warn)}
 .seat.empty{opacity:.55}
 .lobby-foot{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:16px}
@@ -130,12 +136,12 @@ canvas{display:block;width:100%;height:auto;touch-action:none;cursor:crosshair;b
 .hint{margin-left:auto;color:var(--faint)}
 .hint.warn{color:var(--warn)}
 
-.mini{font-family:inherit;font-size:13px;font-weight:500;letter-spacing:-.01em;padding:7px 14px;border-radius:10px;background:rgba(0,0,0,.04);color:var(--muted);border:1px solid var(--line);cursor:pointer;transition:color .15s,border-color .15s,background .15s}
-.mini:hover{color:var(--ink);border-color:rgba(0,0,0,.24)}
-.mini.armed{color:var(--danger);border-color:rgba(229,72,77,.5)}
+.mini{font-family:inherit;font-size:13px;font-weight:500;letter-spacing:-.01em;padding:7px 14px;border-radius:10px;background:rgba(255,255,255,.05);color:var(--muted);border:1px solid var(--line-2);cursor:pointer;transition:color .15s,border-color .15s,background .15s}
+.mini:hover{color:var(--ink);border-color:rgba(255,255,255,.3)}
+.mini.armed{color:var(--danger);border-color:rgba(255,90,110,.55)}
 
 @media (max-width:620px){
-  .logo{font-size:27px}.panel h2{font-size:23px}
+  .logo{font-size:28px}.panel h2{font-size:23px}
   .code-badge{font-size:38px}.count-num{font-size:104px}
   .panel{padding:26px 22px}
 }
@@ -153,12 +159,16 @@ canvas{display:block;width:100%;height:auto;touch-action:none;cursor:crosshair;b
   <div class="board" id="board">
     <canvas id="game" width="1000" height="640"></canvas>
 
-    <div class="tut" id="tut">
-      <div class="tut-top">
-        <div class="tut-msg" id="tutMsg"></div>
+    <div class="layer" id="tut">
+      <div class="banner-top">
+        <div class="banner" id="tutMsg"></div>
         <button class="mini" id="tutSkip" type="button">Skip</button>
       </div>
-      <div class="tut-done" id="tutDone"><button class="btn primary" id="tutPlay" type="button">Play for real</button></div>
+      <div class="done-cta" id="tutDone"><button class="btn primary" id="tutPlay" type="button">Play for real</button></div>
+    </div>
+
+    <div class="layer" id="pick">
+      <div class="banner-top"><div class="banner" id="pickMsg"></div></div>
     </div>
 
     <div class="count" id="count">
@@ -217,25 +227,21 @@ canvas{display:block;width:100%;height:auto;touch-action:none;cursor:crosshair;b
 (function(){
 "use strict";
 
-/* ══════════════════════════════════════════════════════════════
-   Constants — these mirror the server. Only what drawing needs.
-   ══════════════════════════════════════════════════════════════ */
 const W = 1000, H = 640;
 const SEND_FRACTION = 0.5;
 const TROOP_SPEED   = 132;
 const TROOP_GAP     = TROOP_SPEED * 0.028;
+const PRED_TTL      = 4000;
 const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-/* light-theme faction colours: a soft fill, a vivid ring, and a readable ink
-   for the number — all tuned to sit on a white board */
 const FACTIONS = [
-  { name:"Teal",   ring:"#0E9F8C", fill:"#D7F5EF", ink:"#0A7365", glow:"14,159,140" },
-  { name:"Coral",  ring:"#F0435A", fill:"#FDE1E5", ink:"#C51D36", glow:"240,67,90" },
-  { name:"Amber",  ring:"#E08A00", fill:"#FBEAC8", ink:"#A15E00", glow:"224,138,0" },
-  { name:"Violet", ring:"#8257F5", fill:"#EAE2FD", ink:"#5F35C9", glow:"130,87,245" },
-  { name:"Green",  ring:"#4FA52A", fill:"#E3F5D5", ink:"#3B7C1D", glow:"79,165,42" }
+  { name:"Teal",    main:"#3ED6C0", dim:"#0E332E", glow:"62,214,192" },
+  { name:"Crimson", main:"#FF5A6E", dim:"#38151B", glow:"255,90,110" },
+  { name:"Amber",   main:"#FFC53D", dim:"#372B10", glow:"255,197,61" },
+  { name:"Violet",  main:"#B98CFF", dim:"#271F3C", glow:"185,140,255" },
+  { name:"Lime",    main:"#8BE04E", dim:"#1F3115", glow:"139,224,78" }
 ];
-const NEUTRAL = { name:"Free", ring:"#C7CBD2", fill:"#F1F2F4", ink:"#989EA6", glow:"160,166,174" };
+const NEUTRAL = { name:"Free", main:"#78838F", dim:"#171B21", glow:"120,131,143" };
 const paint = o => (o == null || o < 0 ? NEUTRAL : FACTIONS[o]);
 
 const cv  = document.getElementById("game");
@@ -243,24 +249,40 @@ const ctx = cv.getContext("2d");
 const $   = id => document.getElementById(id);
 const nameVal = () => $("name").value.trim();
 
-/* ══════════════════════════════════════════════════════════════
-   State
-   ══════════════════════════════════════════════════════════════ */
 const net = { code:null, pid:null, seat:null, host:false, hostPid:null, phase:"menu",
               roster:[], es:null, ok:true, owner:false, solo:false, ready:false, winner:null, cdEnd:0 };
-const G = {
-  nodes: [],
-  links: [],
-  flights: new Map(),
-  elapsed: 0,
-  started: false
-};
-let pending = [];   /* our own sends the server has not acknowledged yet */
+const G = { nodes: [], links: [], flights: new Map(), elapsed: 0, started: false };
+let pending = [];
 let cid = 0;
 let view = { c: [] };
-const PRED_TTL = 4000;
-
 let sel = [], dragging = false, px = 0, py = 0;
+
+/* ── starfield for the idle "space" screen ── */
+const stars = [];
+for (let i = 0; i < 320; i++) stars.push({
+  x: Math.random() * W, y: Math.random() * H, r: Math.random() * 1.7 + 0.4,
+  a: Math.random() * 0.55 + 0.35, p: Math.random() * 6.28, s: Math.random() * 0.7 + 0.35
+});
+function nebula(x, y, r, rgb, a){
+  const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+  g.addColorStop(0, "rgba(" + rgb + "," + a + ")"); g.addColorStop(1, "rgba(" + rgb + ",0)");
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+}
+function drawSky(t){
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, "#0C1122"); g.addColorStop(1, "#05060A");
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  nebula(280, 165, 380, "62,214,192", 0.11);
+  nebula(775, 490, 420, "150,110,255", 0.13);
+  nebula(560, 300, 320, "255,197,61", 0.05);
+  for (const st of stars){
+    const tw = REDUCED ? 1 : 0.55 + 0.45 * Math.sin(t * st.s + st.p);
+    ctx.globalAlpha = st.a * tw;
+    ctx.fillStyle = "#fff";
+    ctx.beginPath(); ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
 
 /* ══════════════════════════════════════════════════════════════
    Talking to the server
@@ -273,9 +295,7 @@ async function api(action, extra){
   for (let attempt = 0; attempt < 5; attempt++){
     if (attempt) await sleep(150 * attempt);
     try {
-      const r = await fetch("/api/cmd", {
-        method: "POST", headers: { "content-type":"application/json" }, body: JSON.stringify(body)
-      });
+      const r = await fetch("/api/cmd", { method:"POST", headers:{ "content-type":"application/json" }, body: JSON.stringify(body) });
       if (r.status === 429) return { ok:false, error:"Slow down a moment." };
       const j = await r.json();
       if (j.ok || !RETRYABLE.test(j.error || "")) return j;
@@ -298,8 +318,7 @@ function connect(){
   es.onerror = () => {
     net.ok = false; paintHud();
     if (es.readyState === 2 && net.code && reAttempts < 12){
-      reAttempts++;
-      clearTimeout(reTimer);
+      reAttempts++; clearTimeout(reTimer);
       reTimer = setTimeout(() => { if (net.es === es && net.code) connect(); }, Math.min(3000, 400 * reAttempts));
     }
   };
@@ -315,16 +334,12 @@ function onLobby(d){
   net.seat  = me ? me.seat : null;
   net.ready = me ? !!me.ready : false;
   net.winner = d.winner;
-  if (d.phase === "countdown" && (wasPhase !== "countdown" || !net.cdEnd)){
-    net.cdEnd = performance.now() + (d.countdownMs || 0);
-  }
-  paintRoom();
-  paintHud();
-  showStage();
+  if (d.phase === "countdown" && (wasPhase !== "countdown" || !net.cdEnd)) net.cdEnd = performance.now() + (d.countdownMs || 0);
+  paintRoom(); paintPick(); paintHud(); showStage();
 }
 
 function onInit(d){
-  G.nodes = d.nodes.map(a => ({ x:a[0], y:a[1], r:a[2], tier:a[3], home:!!a[4], owner:null, count:0, pulse:0, flash:0 }));
+  G.nodes = d.nodes.map(a => ({ x:a[0], y:a[1], r:a[2], tier:a[3], home:!!a[4], candidate:!!a[5], owner:null, count:0, pulse:0, flash:0 }));
   G.links = d.links;
   G.flights.clear();
   pending = [];
@@ -335,9 +350,8 @@ function onInit(d){
 
 function onState(d){
   if (net.phase === "tutorial" || !G.nodes.length) return;
-  if (d.ack > cid) cid = d.ack;                 /* stay ahead after a reload */
+  if (d.ack > cid) cid = d.ack;
   pending = pending.filter(p => p.cid > d.ack);
-
   for (let i = 0; i < G.nodes.length; i++){
     const n = G.nodes[i];
     const owner = d.n[i*2] < 0 ? null : d.n[i*2];
@@ -346,27 +360,19 @@ function onState(d){
     else if (count < n.count) n.flash = 1;
     n.owner = owner; n.count = count;
   }
-
   const seen = new Set();
   for (const a of d.f){
     const id = a[0]; seen.add(id);
     let fl = G.flights.get(id);
     if (!fl){ fl = { id, from:a[1], to:a[2], owner:a[3], count:a[4], delivered:a[5], prog:a[6] }; G.flights.set(id, fl); }
-    else {
-      fl.delivered = a[5];
-      const drift = a[6] - fl.prog;
-      fl.prog += Math.abs(drift) > 40 ? drift : drift * 0.35;
-    }
+    else { fl.delivered = a[5]; const drift = a[6] - fl.prog; fl.prog += Math.abs(drift) > 40 ? drift : drift * 0.35; }
   }
   for (const id of [...G.flights.keys()]) if (!seen.has(id)) G.flights.delete(id);
   G.elapsed = d.t;
+  if (net.phase === "pick") paintPick();
 }
 
-/* ══════════════════════════════════════════════════════════════
-   Prediction — release drops the source count instantly so the drag
-   feels responsive; the server's own column is the only one drawn, so
-   an order never looks like it travels twice.
-   ══════════════════════════════════════════════════════════════ */
+/* ── orders: instant source-count drop, server draws the one real column ── */
 function issue(from, to){
   if (!from.length) return;
   const id = ++cid;
@@ -377,13 +383,11 @@ function rebuild(){
   const now = performance.now();
   if (pending.length) pending = pending.filter(p => now - p.t0 < PRED_TTL);
   const c = G.nodes.map(n => n.count);
-  for (const p of pending){
-    for (const s of p.from){
-      const n = G.nodes[s];
-      if (!n || n.owner !== net.seat || s === p.to) continue;
-      const k = Math.floor(c[s] * SEND_FRACTION);
-      if (k >= 1) c[s] -= k;
-    }
+  for (const p of pending) for (const s of p.from){
+    const n = G.nodes[s];
+    if (!n || n.owner !== net.seat || s === p.to) continue;
+    const k = Math.floor(c[s] * SEND_FRACTION);
+    if (k >= 1) c[s] -= k;
   }
   view = { c };
 }
@@ -403,11 +407,22 @@ function nodeAt(p){
   return -1;
 }
 const canPlay = () => (net.phase === "live" || net.phase === "tutorial") && net.seat !== null;
+const iPicked = () => G.nodes.some(n => n.candidate && n.owner === net.seat);
 
 cv.addEventListener("pointerdown", e => {
+  const p = pos(e); px = p.x; py = p.y;
+  if (net.phase === "pick"){
+    if (net.seat === null || iPicked()) return;
+    const i = nodeAt(p);
+    if (i >= 0 && G.nodes[i].candidate && G.nodes[i].owner === null){
+      G.nodes[i].owner = net.seat; G.nodes[i].count = 22; G.nodes[i].pulse = 1;  /* optimistic */
+      paintPick();
+      api("pick", { node:i });
+    }
+    return;
+  }
   if (!canPlay()) return;
   cv.setPointerCapture(e.pointerId);
-  const p = pos(e); px = p.x; py = p.y;
   const i = nodeAt(p);
   sel = [];
   if (i >= 0 && G.nodes[i].owner === net.seat){ sel.push(i); dragging = true; }
@@ -423,8 +438,7 @@ function release(){
     const t = nodeAt({ x:px, y:py });
     if (t >= 0){
       const from = sel.filter(s => s !== t);
-      if (net.phase === "tutorial") tutSend(from, t);
-      else issue(from, t);
+      if (net.phase === "tutorial") tutSend(from, t); else issue(from, t);
     }
   }
   dragging = false; sel = [];
@@ -443,7 +457,7 @@ function drawColumn(fl){
   const ang = Math.atan2(b.y - a.y, b.x - a.x);
   const ux = Math.cos(ang), uy = Math.sin(ang);
   const nx = -uy, ny = ux;
-  ctx.fillStyle = c.ring;
+  ctx.fillStyle = c.main;
   for (let i = fl.delivered; i < fl.count; i++){
     const arc = fl.prog - i * TROOP_GAP;
     if (arc < 0) break;
@@ -451,96 +465,102 @@ function drawColumn(fl){
     const off = (i % 5 - 2) * 4.5;
     const d = a.r + arc;
     ctx.beginPath();
-    ctx.arc(a.x + ux * d + nx * off, a.y + uy * d + ny * off, 3.2, 0, Math.PI * 2);
+    ctx.arc(a.x + ux * d + nx * off, a.y + uy * d + ny * off, 3.1, 0, Math.PI * 2);
     ctx.fill();
   }
 }
 
 function render(){
+  const t = performance.now();
+  if (!G.nodes.length){ drawSky(t / 1000); return; }
   ctx.clearRect(0, 0, W, H);
-  if (!G.nodes.length) return;
 
-  ctx.strokeStyle = "rgba(0,0,0,.06)";
-  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = "rgba(255,255,255,.05)";
+  ctx.lineWidth = 1;
   for (const l of G.links){
     const a = G.nodes[l[0]], b = G.nodes[l[1]];
     ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
   }
 
   if (dragging && sel.length){
-    const t = nodeAt({ x:px, y:py });
+    const tg = nodeAt({ x:px, y:py });
     const mine = FACTIONS[net.seat] || FACTIONS[0];
-    ctx.setLineDash([5, 7]); ctx.lineWidth = 2.5;
+    ctx.setLineDash([5, 7]); ctx.lineWidth = 2;
     for (const s of sel){
       const a = G.nodes[s];
-      ctx.strokeStyle = (t >= 0 && t !== s) ? mine.ring : "rgba(" + mine.glow + ",.4)";
+      ctx.strokeStyle = (tg >= 0 && tg !== s) ? mine.main : "rgba(" + mine.glow + ",.35)";
       ctx.beginPath(); ctx.moveTo(a.x, a.y);
-      ctx.lineTo(t >= 0 ? G.nodes[t].x : px, t >= 0 ? G.nodes[t].y : py); ctx.stroke();
+      ctx.lineTo(tg >= 0 ? G.nodes[tg].x : px, tg >= 0 ? G.nodes[tg].y : py); ctx.stroke();
     }
     ctx.setLineDash([]);
-    if (t >= 0){
-      const n = G.nodes[t];
-      ctx.strokeStyle = mine.ring; ctx.lineWidth = 3;
+    if (tg >= 0){
+      const n = G.nodes[tg];
+      ctx.strokeStyle = mine.main; ctx.lineWidth = 2.5;
       ctx.beginPath(); ctx.arc(n.x, n.y, n.r + 9, 0, Math.PI * 2); ctx.stroke();
     }
   }
 
+  const picking = net.phase === "pick";
   for (let i = 0; i < G.nodes.length; i++){
     const n = G.nodes[i];
     const c = paint(n.owner);
     const owned = n.owner !== null;
+    const pickable = picking && n.candidate && !owned;
 
     if (owned){
-      const g = ctx.createRadialGradient(n.x, n.y, n.r * .6, n.x, n.y, n.r * 2.15);
-      g.addColorStop(0, "rgba(" + c.glow + ",.16)");
-      g.addColorStop(1, "rgba(" + c.glow + ",0)");
+      const g = ctx.createRadialGradient(n.x, n.y, n.r * .5, n.x, n.y, n.r * 2.5);
+      g.addColorStop(0, "rgba(" + c.glow + ",.20)"); g.addColorStop(1, "rgba(" + c.glow + ",0)");
       ctx.fillStyle = g;
-      ctx.beginPath(); ctx.arc(n.x, n.y, n.r * 2.15, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(n.x, n.y, n.r * 2.5, 0, Math.PI * 2); ctx.fill();
     }
-
+    if (pickable){
+      const tw = REDUCED ? 1 : 0.5 + 0.5 * Math.sin(t / 360 + i);
+      ctx.strokeStyle = "rgba(62,214,192," + (0.3 + 0.45 * tw) + ")";
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(n.x, n.y, n.r + 7 + tw * 5, 0, Math.PI * 2); ctx.stroke();
+    }
     if (n.pulse > 0 && !REDUCED){
-      ctx.strokeStyle = "rgba(" + c.glow + "," + (n.pulse * .6) + ")";
-      ctx.lineWidth = 2.5;
-      ctx.beginPath(); ctx.arc(n.x, n.y, n.r + (1 - n.pulse) * 24, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = "rgba(" + c.glow + "," + (n.pulse * .5) + ")";
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(n.x, n.y, n.r + (1 - n.pulse) * 26, 0, Math.PI * 2); ctx.stroke();
     }
 
-    ctx.fillStyle = owned ? c.fill : NEUTRAL.fill;
+    ctx.fillStyle = c.dim;
     ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2); ctx.fill();
 
-    ctx.strokeStyle = owned ? c.ring : NEUTRAL.ring;
+    ctx.strokeStyle = pickable ? "rgba(62,214,192,.6)" : c.main;
     ctx.lineWidth = n.home ? 3.4 : 2.2;
-    ctx.globalAlpha = owned ? 1 : .85;
+    ctx.globalAlpha = (owned || pickable) ? 1 : .55;
     ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2); ctx.stroke();
     ctx.globalAlpha = 1;
 
-    if (n.tier === 2 && !n.home){
-      ctx.strokeStyle = owned ? c.ring : NEUTRAL.ring;
-      ctx.globalAlpha = owned ? .45 : .3; ctx.lineWidth = 1.4;
+    if (n.tier === 2 && !n.home && !pickable){
+      ctx.globalAlpha = owned ? .55 : .3; ctx.lineWidth = 1.4;
       ctx.beginPath(); ctx.arc(n.x, n.y, n.r - 6, 0, Math.PI * 2); ctx.stroke();
       ctx.globalAlpha = 1;
     }
     if (n.home){
-      ctx.fillStyle = c.ring; ctx.globalAlpha = .12;
+      ctx.fillStyle = c.main; ctx.globalAlpha = .16;
       ctx.beginPath(); ctx.arc(n.x, n.y, n.r - 5, 0, Math.PI * 2); ctx.fill();
       ctx.globalAlpha = 1;
     }
-
     if (n.flash > 0){
-      ctx.fillStyle = "rgba(0,0,0," + (n.flash * .10) + ")";
+      ctx.fillStyle = "rgba(255,255,255," + (n.flash * .3) + ")";
       ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2); ctx.fill();
     }
     if (sel.indexOf(i) >= 0){
-      ctx.strokeStyle = (FACTIONS[net.seat] || FACTIONS[0]).ring; ctx.lineWidth = 2.5;
+      ctx.strokeStyle = "#fff"; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.arc(n.x, n.y, n.r + 6, 0, Math.PI * 2); ctx.stroke();
     }
 
-    ctx.fillStyle = owned ? c.ink : NEUTRAL.ink;
-    ctx.font = "600 " + (n.home ? 19 : n.tier === 2 ? 17 : n.tier === 1 ? 15 : 13) + "px system-ui, sans-serif";
-    ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    ctx.fillText(String(Math.max(0, view.c[i] != null ? view.c[i] : n.count)), n.x, n.y + 1);
+    if (!pickable){
+      ctx.fillStyle = owned ? "#fff" : "rgba(234,236,239,.72)";
+      ctx.font = "600 " + (n.home ? 19 : n.tier === 2 ? 17 : n.tier === 1 ? 15 : 13) + "px system-ui, sans-serif";
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(String(Math.max(0, view.c[i] != null ? view.c[i] : n.count)), n.x, n.y + 1);
+    }
   }
   ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
-
   for (const fl of G.flights.values()) drawColumn(fl);
 }
 
@@ -549,24 +569,20 @@ function render(){
    ══════════════════════════════════════════════════════════════ */
 const TUT = { flights: [], nextId: 1, step: 0 };
 const TUT_STEPS = [
-  { msg: "This teal circle is your base. <b>Drag from it onto the grey circle</b> to send half its troops.",
-    done: () => G.nodes[1] && G.nodes[1].owner === 0 },
-  { msg: "Nice — you took it, and circles you own slowly grow. Now <b>take the red base</b>. Drag from both of your circles at once if you need more troops.",
-    done: () => G.nodes[2] && G.nodes[2].owner === 0 },
-  { msg: "That's the whole game: send, capture, and hold everything to win. You're ready.",
-    done: null }
+  { msg: "This teal circle is your base. <b>Drag from it onto the grey circle</b> to send half its troops.", done: () => G.nodes[1] && G.nodes[1].owner === 0 },
+  { msg: "Nice — you took it, and circles you own slowly grow. Now <b>take the red base</b>. Drag from both of your circles at once if you need more troops.", done: () => G.nodes[2] && G.nodes[2].owner === 0 },
+  { msg: "That's the whole game: send, capture, and hold everything to win. You're ready.", done: null }
 ];
 function tutBoard(){
   G.nodes = [
-    { x:250, y:430, r:31, tier:2, home:true,  owner:0,    count:24, acc:0, cap:99, growth:1.3, pulse:0, flash:0 },
-    { x:505, y:295, r:24, tier:1, home:false, owner:null, count:9,  acc:0, cap:60, growth:0.7, pulse:0, flash:0 },
-    { x:760, y:225, r:30, tier:2, home:true,  owner:1,    count:10, acc:0, cap:99, growth:0.5, pulse:0, flash:0 }
+    { x:250, y:430, r:31, tier:2, home:true,  candidate:false, owner:0,    count:24, acc:0, cap:99, growth:1.3, pulse:0, flash:0 },
+    { x:505, y:295, r:24, tier:1, home:false, candidate:false, owner:null, count:9,  acc:0, cap:60, growth:0.7, pulse:0, flash:0 },
+    { x:760, y:225, r:30, tier:2, home:true,  candidate:false, owner:1,    count:10, acc:0, cap:99, growth:0.5, pulse:0, flash:0 }
   ];
   G.links = [[0,1],[1,2],[0,2]];
   G.flights.clear();
   TUT.flights = []; TUT.nextId = 1; TUT.step = 0;
-  G.started = true;
-  net.seat = 0;
+  G.started = true; net.seat = 0;
 }
 function tutSend(from, to){
   for (const s of from){
@@ -576,8 +592,7 @@ function tutSend(from, to){
     if (k < 1) continue;
     n.count -= k;
     const t = G.nodes[to];
-    TUT.flights.push({ id: TUT.nextId++, from:s, to, owner:0, count:k, delivered:0, prog:0,
-      len: Math.max(8, Math.hypot(t.x - n.x, t.y - n.y) - n.r - t.r * 0.82) });
+    TUT.flights.push({ id: TUT.nextId++, from:s, to, owner:0, count:k, delivered:0, prog:0, len: Math.max(8, Math.hypot(t.x - n.x, t.y - n.y) - n.r - t.r * 0.82) });
   }
 }
 function tutTick(dt){
@@ -600,7 +615,6 @@ function tutTick(dt){
   }
   G.flights.clear();
   for (const fl of TUT.flights) G.flights.set(fl.id, fl);
-
   const s = TUT_STEPS[TUT.step];
   if (s && s.done && s.done()){
     TUT.step++;
@@ -631,19 +645,17 @@ function buildHud(){
   shareEl.textContent = ""; legendEl.textContent = "";
   bars.length = counts.length = names.length = 0;
   for (let i = 0; i < FACTIONS.length; i++){
-    const b = document.createElement("i");
-    b.style.background = FACTIONS[i].ring; b.style.width = "0%";
+    const b = document.createElement("i"); b.style.background = FACTIONS[i].main; b.style.width = "0%";
     shareEl.appendChild(b); bars.push(b);
     const p = document.createElement("span"); p.className = "p";
-    const d = document.createElement("span"); d.className = "dot"; d.style.background = FACTIONS[i].ring;
+    const d = document.createElement("span"); d.className = "dot"; d.style.background = FACTIONS[i].main; d.style.color = FACTIONS[i].main;
     const nm = document.createElement("span"); nm.textContent = FACTIONS[i].name;
     const num = document.createElement("span"); num.className = "n"; num.textContent = "0";
     p.append(d, nm, num); legendEl.appendChild(p);
     counts.push(num); names.push(nm);
   }
   const hint = document.createElement("span");
-  hint.className = "hint"; hint.id = "hint";
-  hint.textContent = "drag from yours onto anything";
+  hint.className = "hint"; hint.id = "hint"; hint.textContent = "drag from yours onto anything";
   legendEl.appendChild(hint);
 }
 function seatName(seat){
@@ -664,11 +676,11 @@ function paintHud(){
   const hint = $("hint");
   if (hint){
     const wipedOut = net.phase === "live" && net.seat !== null && G.started && G.nodes.length &&
-                     G.nodes.some(n => n.owner !== null) &&
-                     !G.nodes.some(n => n.owner === net.seat) &&
+                     G.nodes.some(n => n.owner !== null) && !G.nodes.some(n => n.owner === net.seat) &&
                      ![...G.flights.values()].some(f => f.owner === net.seat);
     const set = (txt, cls) => { if (hint.textContent !== txt){ hint.textContent = txt; hint.className = cls; } };
     if (net.phase === "tutorial")                      { set("tutorial", "hint"); }
+    else if (net.phase === "pick")                     { set("choose your start", "hint"); }
     else if (!net.ok)                                  { set("reconnecting…", "hint warn"); }
     else if (wipedOut)                                 { set("you are out — watching", "hint warn"); }
     else if (net.phase === "live" && net.seat === null){ set("spectating", "hint"); }
@@ -695,18 +707,31 @@ function showPanel(id){
   const ov = $("ov");
   for (const p of document.querySelectorAll(".panel")) p.classList.remove("on");
   if (!id){ ov.classList.remove("on"); return; }
-  ov.classList.add("on");
-  $(id).classList.add("on");
+  ov.classList.add("on"); $(id).classList.add("on");
 }
 function showStage(){
   const p = net.phase;
+  const bare = p === "menu";   /* the start screen is just space + the card */
+  $("share").style.visibility  = bare ? "hidden" : "visible";
+  $("timer").style.visibility  = bare ? "hidden" : "visible";
+  $("legend").style.visibility = bare ? "hidden" : "visible";
   $("count").classList.toggle("on", p === "countdown" || (net.solo && p === "lobby"));
   $("tut").classList.toggle("on", p === "tutorial");
+  $("pick").classList.toggle("on", p === "pick");
   if (p === "menu")            showPanel("p-menu");
   else if (p === "lobby")      showPanel(net.solo ? null : "p-room");
+  else if (p === "pick")       showPanel(null);
   else if (p === "countdown")  showPanel(null);
   else if (p === "over")       showOver();
-  else                         showPanel(null);   /* live / tutorial */
+  else                         showPanel(null);
+}
+
+function paintPick(){
+  if (net.phase !== "pick") return;
+  const txt = net.seat === null ? "The players are choosing where to start."
+    : iPicked() ? "<b>Locked in.</b> Waiting for the others to choose…"
+    : "<b>Choose where to start</b> — tap one of the glowing circles.";
+  if ($("pickMsg").innerHTML !== txt) $("pickMsg").innerHTML = txt;
 }
 
 let lastCd = -99;
@@ -715,7 +740,7 @@ function paintCountdown(now){
     if (lastCd !== -1){ lastCd = -1; $("countNum").textContent = ""; $("countSub").textContent = "Setting up…"; }
     return;
   }
-  if (net.phase !== "countdown") { lastCd = -99; return; }
+  if (net.phase !== "countdown"){ lastCd = -99; return; }
   const n = Math.min(3, Math.max(0, Math.ceil((net.cdEnd - now) / 1000)));
   if (n === lastCd) return;
   lastCd = n;
@@ -735,12 +760,11 @@ function paintRoom(){
     const row = document.createElement("div");
     row.className = "seat" + (p ? "" : " empty") + (p && p.pid === net.pid ? " mine" : "");
     const d = document.createElement("span");
-    d.className = "dot"; d.style.background = FACTIONS[s].ring;
+    d.className = "dot"; d.style.background = FACTIONS[s].main; d.style.color = FACTIONS[s].main;
     const who = document.createElement("span");
     who.className = "who";
     who.textContent = p ? (p.name + (p.pid === net.pid ? " (you)" : "")) : "Open — played by AI";
-    const badge = document.createElement("span");
-    badge.className = "badge";
+    const badge = document.createElement("span"); badge.className = "badge";
     if (!p)                           badge.textContent = "AI";
     else if (p.pid === net.hostPid)   badge.textContent = "host";
     else if (!p.live)               { badge.textContent = "away"; badge.className = "badge away"; }
@@ -751,26 +775,19 @@ function paintRoom(){
   }
   const specs = net.roster.filter(p => p.seat === null);
   if (specs.length){
-    const row = document.createElement("div");
-    row.className = "seat empty";
+    const row = document.createElement("div"); row.className = "seat empty";
     row.textContent = specs.length + (specs.length === 1 ? " person watching" : " people watching");
     box.appendChild(row);
   }
   const others = net.roster.filter(p => p.seat !== null && p.live && !(net.host && p.pid === net.pid));
   const guests = net.host ? others : others.filter(p => p.pid !== net.pid);
   const readyN = guests.filter(p => p.ready).length;
-
   const start = $("btnStart"), ready = $("btnReady");
   start.style.display = net.host ? "" : "none";
   ready.style.display = net.host ? "none" : "";
   if (net.host) start.textContent = guests.length ? ("Start · " + readyN + "/" + guests.length + " ready") : "Start";
-  else {
-    ready.textContent = net.ready ? "Ready ✓" : "I'm ready";
-    ready.className = "btn " + (net.ready ? "ready-on" : "tinted");
-  }
-  $("waitMsg").textContent = net.host
-    ? "You can start whenever you like"
-    : (net.ready ? "Waiting for the host to start" : "Tap ready when you are set");
+  else { ready.textContent = net.ready ? "Ready ✓" : "I'm ready"; ready.className = "btn " + (net.ready ? "ready-on" : "tinted"); }
+  $("waitMsg").textContent = net.host ? "You can start whenever you like" : (net.ready ? "Waiting for the host to start" : "Tap ready when you are set");
   $("btnAgain").style.display = net.host ? "" : "none";
   $("againMsg").textContent = net.host ? " " : "Waiting for the host";
 }
@@ -794,7 +811,6 @@ let tabId = "";
 try { tabId = sessionStorage.getItem("holdings.tab") || ""; } catch (e){}
 if (!tabId){ tabId = Math.random().toString(36).slice(2); try { sessionStorage.setItem("holdings.tab", tabId); } catch (e){} }
 const HOLD_FRESH = 15000;
-
 function loadSaved(){ try { return JSON.parse(localStorage.getItem("holdings") || "null"); } catch (e){ return null; } }
 function resumablePid(code){
   const s = loadSaved();
@@ -821,8 +837,7 @@ function enterRoom(code, pid, own){
 setInterval(() => { if (net.owner && net.code) remember(); }, 5000);
 
 async function playSolo(){
-  $("menuErr").textContent = "";
-  net.solo = true;
+  $("menuErr").textContent = ""; net.solo = true;
   const r = await api("create", { name: nameVal(), code:null, pid:null });
   if (!r.ok){ net.solo = false; $("menuErr").textContent = r.error || "Could not start."; showStage(); return; }
   enterRoom(r.code, r.pid);
@@ -836,8 +851,7 @@ $("tutSkip").addEventListener("click", () => { exitTutorial(); showStage(); });
 $("tutPlay").addEventListener("click", () => { exitTutorial(); playSolo(); });
 
 $("btnCreate").addEventListener("click", async () => {
-  $("menuErr").textContent = "";
-  net.solo = false;
+  $("menuErr").textContent = ""; net.solo = false;
   const r = await api("create", { name: nameVal(), code:null, pid:null });
   if (!r.ok) return ($("menuErr").textContent = r.error || "Could not create the room.");
   enterRoom(r.code, r.pid);
@@ -859,10 +873,7 @@ async function doJoin(raw){
 }
 
 $("btnStart").addEventListener("click", () => api("start"));
-$("btnReady").addEventListener("click", async () => {
-  net.ready = !net.ready; paintRoom();
-  await api("ready", { ready: net.ready });
-});
+$("btnReady").addEventListener("click", async () => { net.ready = !net.ready; paintRoom(); await api("ready", { ready: net.ready }); });
 $("btnAgain").addEventListener("click", () => api("restart"));
 $("btnBack").addEventListener("click",  () => showPanel("p-room"));
 
@@ -883,9 +894,9 @@ $("leave").addEventListener("click", () => {
   if (net.owner) try { localStorage.removeItem("holdings"); } catch (e){}
   net.code = net.pid = null; net.seat = null; net.phase = "menu"; net.roster = [];
   net.owner = false; net.solo = false; net.ready = false;
-  G.nodes = []; G.links = []; G.flights.clear(); pending = []; view = { c:[] };
+  G.nodes = []; G.links = []; G.flights.clear(); G.elapsed = 0; pending = []; view = { c:[] };
   history.replaceState(null, "", location.pathname);
-  paintHud(); showPanel("p-menu");
+  paintHud(); showStage();
 });
 
 const restartBtn = $("restart");
@@ -908,10 +919,9 @@ addEventListener("keydown", e => {
    ══════════════════════════════════════════════════════════════ */
 buildHud();
 paintHud();
-
+showStage();
 try { $("name").value = localStorage.getItem("holdings.name") || ""; } catch (e){}
 const wanted = new URLSearchParams(location.search).get("r");
-
 if (wanted){
   const c = wanted.toUpperCase().slice(0, 4);
   $("code").value = c;
@@ -932,7 +942,6 @@ let last = performance.now();
   let dt = (now - last) / 1000; last = now;
   if (dt > 1/20) dt = 1/20;
   if (armed > 0){ armed -= dt; if (armed <= 0) disarm(); }
-
   for (const n of G.nodes){
     if (n.pulse > 0) n.pulse = Math.max(0, n.pulse - dt * 2.6);
     if (n.flash > 0) n.flash = Math.max(0, n.flash - dt * 4.5);

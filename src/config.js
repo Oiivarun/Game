@@ -37,5 +37,6 @@ module.exports = {
   LOBBY_TIMEOUT: 60 * 60 * 1000,
   MATCH_CAP:     15 * 60,          /* seconds — the leader takes a stalemate */
   MAX_ROOMS:     500,              /* hard ceiling on live rooms (DoS guard) */
-  COUNTDOWN_MS:  3200              /* shared "get ready" before a match goes live */
+  COUNTDOWN_MS:  3200,             /* shared "get ready" before a match goes live */
+  PICK_TIMEOUT:  45000             /* players choosing a start block get this long */
 };
