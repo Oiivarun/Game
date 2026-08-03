@@ -160,7 +160,7 @@ function handleCmd(body){
     return { ok:true, ready: me.ready };
   }
 
-  if (action === "start" || action === "restart"){
+  if (action === "start"){
     if (me.pid !== room.hostPid) return { ok:false, error:"Only the host can start." };
     room.seed = (Math.random() * 1e9) | 0;
     assignSeats(room);
@@ -172,6 +172,20 @@ function handleCmd(body){
     broadcastLobby(room);
     broadcastInit(room);
     broadcastState(room);
+    return { ok:true };
+  }
+
+  if (action === "restart"){
+    /* back to the party: everyone regroups in the lobby and re-readies, then
+       the host starts a fresh match — so both sides always get the same game */
+    if (me.pid !== room.hostPid) return { ok:false, error:"Only the host can start." };
+    room.phase = "lobby";
+    room.nodes = []; room.links = []; room.flights = [];
+    room.candidates = []; room.picks = {};
+    room.winner = undefined; room.elapsed = 0; room.goLiveAt = 0;
+    assignSeats(room);
+    for (const p of room.players.values()){ p.ready = false; p.ack = 0; p.execCid = 0; }
+    broadcastLobby(room);
     return { ok:true };
   }
 

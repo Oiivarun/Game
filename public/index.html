@@ -213,7 +213,6 @@ canvas{display:block;width:100%;height:auto;touch-action:none;cursor:crosshair}
         <h2 id="overT">The map is yours</h2>
         <p class="lead" id="overP"></p>
         <button id="btnAgain" class="btn primary" type="button">Play again</button>
-        <button class="btn ghost" id="btnBack" type="button">Back to the room</button>
         <div class="lobby-foot"><span class="waitMsg" id="againMsg">&nbsp;</span></div>
       </div>
 
@@ -251,35 +250,51 @@ const nameVal = () => $("name").value.trim();
 
 const net = { code:null, pid:null, seat:null, host:false, hostPid:null, phase:"menu",
               roster:[], es:null, ok:true, owner:false, solo:false, ready:false, winner:null, cdEnd:0 };
-const G = { nodes: [], links: [], flights: new Map(), elapsed: 0, started: false };
+const G = { nodes: [], links: [], flights: new Map(), elapsed: 0, started: false, seed: null };
 let pending = [];
 let cid = 0;
 let view = { c: [], ghosts: [] };
 let sel = [], dragging = false, px = 0, py = 0;
 
-/* ── starfield for the idle "space" screen ── */
+/* ── pre-rendered sprites — drawImage each frame instead of building a radial
+   gradient per circle (and a 3-gradient starfield) every frame ── */
+const glowSprite = FACTIONS.map(f => {
+  const c = document.createElement("canvas"); c.width = c.height = 128;
+  const g = c.getContext("2d");
+  const grd = g.createRadialGradient(64, 64, 12, 64, 64, 64);
+  grd.addColorStop(0, "rgba(" + f.glow + ",.22)"); grd.addColorStop(1, "rgba(" + f.glow + ",0)");
+  g.fillStyle = grd; g.fillRect(0, 0, 128, 128);
+  return c;
+});
 const stars = [];
 for (let i = 0; i < 320; i++) stars.push({
   x: Math.random() * W, y: Math.random() * H, r: Math.random() * 1.7 + 0.4,
   a: Math.random() * 0.55 + 0.35, p: Math.random() * 6.28, s: Math.random() * 0.7 + 0.35
 });
-function nebula(x, y, r, rgb, a){
-  const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-  g.addColorStop(0, "rgba(" + rgb + "," + a + ")"); g.addColorStop(1, "rgba(" + rgb + ",0)");
-  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+let skyCanvas = null;
+function buildSky(){
+  const c = document.createElement("canvas"); c.width = W; c.height = H;
+  const g = c.getContext("2d");
+  const grad = g.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, "#0C1122"); grad.addColorStop(1, "#05060A");
+  g.fillStyle = grad; g.fillRect(0, 0, W, H);
+  const neb = (x, y, r, rgb, a) => {
+    const rg = g.createRadialGradient(x, y, 0, x, y, r);
+    rg.addColorStop(0, "rgba(" + rgb + "," + a + ")"); rg.addColorStop(1, "rgba(" + rgb + ",0)");
+    g.fillStyle = rg; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+  };
+  neb(280, 165, 380, "62,214,192", .11); neb(775, 490, 420, "150,110,255", .13); neb(560, 300, 320, "255,197,61", .05);
+  for (const st of stars){ g.globalAlpha = st.a; g.fillStyle = "#fff"; g.beginPath(); g.arc(st.x, st.y, st.r, 0, Math.PI * 2); g.fill(); }
+  g.globalAlpha = 1;
+  skyCanvas = c;
 }
 function drawSky(t){
-  const g = ctx.createLinearGradient(0, 0, 0, H);
-  g.addColorStop(0, "#0C1122"); g.addColorStop(1, "#05060A");
-  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-  nebula(280, 165, 380, "62,214,192", 0.11);
-  nebula(775, 490, 420, "150,110,255", 0.13);
-  nebula(560, 300, 320, "255,197,61", 0.05);
-  for (const st of stars){
-    const tw = REDUCED ? 1 : 0.55 + 0.45 * Math.sin(t * st.s + st.p);
-    ctx.globalAlpha = st.a * tw;
-    ctx.fillStyle = "#fff";
-    ctx.beginPath(); ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2); ctx.fill();
+  if (!skyCanvas) buildSky();
+  ctx.drawImage(skyCanvas, 0, 0);
+  if (!REDUCED) for (let i = 0; i < 44; i++){        /* a few live twinklers over the cached field */
+    const st = stars[(i * 7) % stars.length];
+    ctx.globalAlpha = st.a * (0.5 + 0.5 * Math.sin(t * st.s + st.p));
+    ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(st.x, st.y, st.r + .4, 0, Math.PI * 2); ctx.fill();
   }
   ctx.globalAlpha = 1;
 }
@@ -339,9 +354,17 @@ function onLobby(d){
 }
 
 function onInit(d){
-  G.nodes = d.nodes.map(a => ({ x:a[0], y:a[1], r:a[2], tier:a[3], home:!!a[4], candidate:!!a[5], owner:null, count:0, pulse:0, flash:0 }));
+  /* a reconnect (or the pick→countdown re-send) carries the same map — keep the
+     board we already have instead of wiping it, so it doesn't flash/reload */
+  const same = G.seed === d.seed && G.nodes.length === d.nodes.length;
+  const prev = same ? G.nodes : null;
+  G.seed = d.seed;
+  G.nodes = d.nodes.map((a, i) => ({
+    x:a[0], y:a[1], r:a[2], tier:a[3], home:!!a[4], candidate:!!a[5],
+    owner: prev ? prev[i].owner : null, count: prev ? prev[i].count : 0, pulse:0, flash:0
+  }));
   G.links = d.links;
-  G.flights.clear();
+  if (!same) G.flights.clear();
   pending = [];
   G.started = true;
   net.seat = d.seat;
@@ -533,10 +556,8 @@ function render(){
     const pickable = picking && n.candidate && !owned;
 
     if (owned){
-      const g = ctx.createRadialGradient(n.x, n.y, n.r * .5, n.x, n.y, n.r * 2.5);
-      g.addColorStop(0, "rgba(" + c.glow + ",.20)"); g.addColorStop(1, "rgba(" + c.glow + ",0)");
-      ctx.fillStyle = g;
-      ctx.beginPath(); ctx.arc(n.x, n.y, n.r * 2.5, 0, Math.PI * 2); ctx.fill();
+      const R = n.r * 2.5;
+      ctx.drawImage(glowSprite[n.owner], n.x - R, n.y - R, R * 2, R * 2);
     }
     if (pickable){
       const tw = REDUCED ? 1 : 0.5 + 0.5 * Math.sin(t / 360 + i);
@@ -909,8 +930,11 @@ async function doJoin(raw){
 
 $("btnStart").addEventListener("click", () => api("start"));
 $("btnReady").addEventListener("click", async () => { net.ready = !net.ready; paintRoom(); await api("ready", { ready: net.ready }); });
-$("btnAgain").addEventListener("click", () => api("restart"));
-$("btnBack").addEventListener("click",  () => showPanel("p-room"));
+async function playAgain(){
+  await api("restart");             /* everyone back to the shared lobby */
+  if (net.solo) await api("start"); /* solo: no party to wait on — jump straight in */
+}
+$("btnAgain").addEventListener("click", playAgain);
 
 async function copyLink(){
   const link = location.origin + location.pathname + "?r=" + net.code;
@@ -939,7 +963,7 @@ let armed = 0;
 function disarm(){ armed = 0; restartBtn.classList.remove("armed"); restartBtn.textContent = "Restart"; }
 function hitRestart(){
   if (!net.host || net.phase !== "live") return;
-  if (armed > 0){ disarm(); api("restart"); return; }
+  if (armed > 0){ disarm(); playAgain(); return; }
   armed = 2.6; restartBtn.classList.add("armed"); restartBtn.textContent = "Sure?";
 }
 restartBtn.addEventListener("click", hitRestart);
