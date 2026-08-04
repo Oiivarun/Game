@@ -3,24 +3,27 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Holdings</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='11' fill='none' stroke='%238FD6C9' stroke-width='3'/%3E%3C/svg%3E">
-<meta name="theme-color" content="#0C0D0F">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='11' fill='none' stroke='%233ED6C0' stroke-width='3'/%3E%3C/svg%3E">
+<meta name="theme-color" content="#05060A">
 <!-- system fonts only — no external requests (privacy + reliability) -->
 
 <style>
 :root{
-  --bg:#0C0D0F; --board:#131518; --panel:#17191D;
+  --bg:#05060A; --board:#080B12; --panel:#0E1119;
   --ink:#E9EBED;
-  --muted:rgba(233,235,237,.58); --faint:rgba(233,235,237,.38); --ghost:rgba(233,235,237,.22);
-  --line:rgba(255,255,255,.07); --line-2:rgba(255,255,255,.13);
-  --field:rgba(255,255,255,.045);
-  --accent:#8FD6C9; --accent-ink:#0F1F1B; --danger:#E58E9B; --warn:#DCBE8F;
+  --muted:rgba(233,235,237,.6); --faint:rgba(233,235,237,.4); --ghost:rgba(233,235,237,.22);
+  --line:rgba(255,255,255,.08); --line-2:rgba(255,255,255,.15);
+  --field:rgba(255,255,255,.05);
+  --accent:#3ED6C0; --accent-ink:#04231F; --danger:#FF5A6E; --warn:#FFC53D;
   --ease:cubic-bezier(.22,1,.36,1);
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;overflow:hidden;-webkit-tap-highlight-color:transparent}
 body{
-  background:var(--bg);
+  background:
+    radial-gradient(1200px 700px at 50% -15%, rgba(62,214,192,.08), transparent 55%),
+    radial-gradient(1000px 800px at 92% 115%, rgba(150,110,255,.09), transparent 55%),
+    var(--bg);
   color:var(--ink);
   font-family:ui-rounded,'SF Pro Rounded',system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
   -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
@@ -40,7 +43,7 @@ body{
 .board{
   position:relative;border-radius:20px;overflow:hidden;
   background:var(--board);border:1px solid var(--line);
-  box-shadow:0 24px 60px -30px rgba(0,0,0,.8);
+  box-shadow:0 34px 80px -36px rgba(0,0,0,.95), inset 0 1px 0 rgba(255,255,255,.04);
 }
 canvas{display:block;width:100%;height:auto;touch-action:none;cursor:crosshair}
 
@@ -69,7 +72,7 @@ canvas{display:block;width:100%;height:auto;touch-action:none;cursor:crosshair}
 .panel{
   display:none;width:100%;max-width:380px;padding:32px 30px;
   background:var(--panel);border:1px solid var(--line-2);border-radius:20px;
-  box-shadow:0 30px 70px -28px rgba(0,0,0,.85);
+  box-shadow:0 30px 80px -26px rgba(0,0,0,.9), 0 0 70px -26px rgba(62,214,192,.22);
   animation:rise .45s var(--ease);
 }
 .panel.on{display:block}
@@ -97,7 +100,7 @@ canvas{display:block;width:100%;height:auto;touch-action:none;cursor:crosshair}
 .btn.tinted:hover{background:rgba(255,255,255,.09)}
 .btn.ghost{background:transparent;color:var(--muted);border-color:var(--line-2)}
 .btn.ghost:hover{color:var(--ink);border-color:rgba(255,255,255,.26)}
-.btn.ready-on{background:rgba(143,214,201,.12);color:var(--accent);border-color:rgba(143,214,201,.4)}
+.btn.ready-on{background:rgba(62,214,192,.13);color:var(--accent);border-color:rgba(62,214,192,.45)}
 .btn.link{background:none;border:none;color:var(--faint);font-size:13px;font-weight:450;padding:10px;width:auto;margin:6px auto 0}
 .btn.link:hover{color:var(--accent);transform:none}
 
@@ -107,7 +110,7 @@ canvas{display:block;width:100%;height:auto;touch-action:none;cursor:crosshair}
   padding:13px 16px;width:100%;outline:none;
   transition:border-color .3s var(--ease), background .3s var(--ease), box-shadow .3s var(--ease);
 }
-.field:focus{border-color:rgba(143,214,201,.55);background:rgba(255,255,255,.06);box-shadow:0 0 0 4px rgba(143,214,201,.12)}
+.field:focus{border-color:rgba(62,214,192,.55);background:rgba(255,255,255,.06);box-shadow:0 0 0 4px rgba(62,214,192,.13)}
 .field::placeholder{color:var(--ghost)}
 #name{margin-bottom:13px}
 .join{display:flex;gap:8px}
@@ -245,15 +248,15 @@ const PRED_TTL      = 12000;   /* safety cap; a column normally retires when it 
 const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const FONT = "ui-rounded, system-ui, sans-serif";
 
-/* muted pastels on graphite — soft rims, translucent glass fills */
+/* vivid, unmistakable faction colours on deep space — solid dim fills, bright rims */
 const FACTIONS = [
-  { name:"Mist",  main:"#8FD6C9", glow:"143,214,201" },
-  { name:"Rose",  main:"#E59CA8", glow:"229,156,168" },
-  { name:"Sand",  main:"#DEC495", glow:"222,196,149" },
-  { name:"Lilac", main:"#B9ACE8", glow:"185,172,232" },
-  { name:"Sage",  main:"#ACCB93", glow:"172,203,147" }
+  { name:"Teal",    main:"#3ED6C0", dim:"#0E332E", glow:"62,214,192" },
+  { name:"Crimson", main:"#FF5A6E", dim:"#38151B", glow:"255,90,110" },
+  { name:"Amber",   main:"#FFC53D", dim:"#372B10", glow:"255,197,61" },
+  { name:"Violet",  main:"#B98CFF", dim:"#271F3C", glow:"185,140,255" },
+  { name:"Lime",    main:"#8BE04E", dim:"#1F3115", glow:"139,224,78" }
 ];
-const NEUTRAL = { name:"Free", main:"#6E7681", glow:"110,118,129" };
+const NEUTRAL = { name:"Free", main:"#78838F", dim:"#171B21", glow:"120,131,143" };
 const paint = o => (o == null || o < 0 ? NEUTRAL : FACTIONS[o]);
 
 const cv  = document.getElementById("game");
@@ -313,35 +316,44 @@ const SFX = (() => {
 })();
 
 /* ══════════════════════════════════════════════════════════════
-   Cached sprites — matte graphite backdrop and one glass highlight
+   Cached sprites — deep-space backdrop and per-faction glow halos
    ══════════════════════════════════════════════════════════════ */
+const stars = [];
+for (let i = 0; i < 320; i++) stars.push({
+  x: Math.random() * W, y: Math.random() * H, r: Math.random() * 1.6 + 0.35,
+  a: Math.random() * 0.5 + 0.28, p: Math.random() * 6.28, s: Math.random() * 0.7 + 0.35
+});
 let bgCanvas = null;
 function buildBg(){
   const c = document.createElement("canvas"); c.width = W; c.height = H;
   const g = c.getContext("2d");
   const grad = g.createLinearGradient(0, 0, 0, H);
-  grad.addColorStop(0, "#15171B"); grad.addColorStop(1, "#0F1114");
+  grad.addColorStop(0, "#0A0F1E"); grad.addColorStop(1, "#05060A");
   g.fillStyle = grad; g.fillRect(0, 0, W, H);
-  g.fillStyle = "rgba(255,255,255,.018)";                 /* hairline dot grid */
-  for (let y = 22; y < H; y += 44) for (let x = 22; x < W; x += 44){
-    g.beginPath(); g.arc(x, y, 1, 0, Math.PI * 2); g.fill();
+  const neb = (x, y, r, rgb, a) => {                       /* soft distant nebulae */
+    const rg = g.createRadialGradient(x, y, 0, x, y, r);
+    rg.addColorStop(0, "rgba(" + rgb + "," + a + ")"); rg.addColorStop(1, "rgba(" + rgb + ",0)");
+    g.fillStyle = rg; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+  };
+  neb(280, 165, 380, "62,214,192", .09);
+  neb(775, 490, 420, "150,110,255", .11);
+  neb(560, 300, 320, "255,197,61", .04);
+  for (const st of stars){
+    g.globalAlpha = st.a; g.fillStyle = "#fff";
+    g.beginPath(); g.arc(st.x, st.y, st.r, 0, Math.PI * 2); g.fill();
   }
-  const v = g.createRadialGradient(W/2, H/2, H*.42, W/2, H/2, H*.95);   /* vignette */
-  v.addColorStop(0, "rgba(0,0,0,0)"); v.addColorStop(1, "rgba(0,0,0,.30)");
-  g.fillStyle = v; g.fillRect(0, 0, W, H);
+  g.globalAlpha = 1;
   bgCanvas = c;
 }
-const glass = (() => {   /* one white top-light sprite, tinted per node by alpha */
+/* one soft glow sprite per faction — drawImage beats a per-frame gradient */
+const glowSprite = FACTIONS.map(f => {
   const c = document.createElement("canvas"); c.width = c.height = 128;
   const g = c.getContext("2d");
-  const grd = g.createRadialGradient(52, 44, 6, 64, 64, 66);
-  grd.addColorStop(0, "rgba(255,255,255,.14)");
-  grd.addColorStop(.55, "rgba(255,255,255,.03)");
-  grd.addColorStop(1, "rgba(255,255,255,0)");
-  g.fillStyle = grd;
-  g.beginPath(); g.arc(64, 64, 64, 0, Math.PI * 2); g.fill();
+  const grd = g.createRadialGradient(64, 64, 12, 64, 64, 64);
+  grd.addColorStop(0, "rgba(" + f.glow + ",.20)"); grd.addColorStop(1, "rgba(" + f.glow + ",0)");
+  g.fillStyle = grd; g.fillRect(0, 0, 128, 128);
   return c;
-})();
+});
 
 /* ══════════════════════════════════════════════════════════════
    Talking to the server
@@ -552,7 +564,7 @@ cv.addEventListener("pointercancel", release);
 cv.addEventListener("contextmenu", e => e.preventDefault());
 
 /* ══════════════════════════════════════════════════════════════
-   Render — matte graphite, glass dots, comet trails
+   Render — infinite space, solid vivid circles, clean troop dots
    ══════════════════════════════════════════════════════════════ */
 function drawColumn(fl, now){
   const a = G.nodes[fl.from], b = G.nodes[fl.to];
@@ -561,37 +573,30 @@ function drawColumn(fl, now){
   const ang = Math.atan2(b.y - a.y, b.x - a.x);
   const ux = Math.cos(ang), uy = Math.sin(ang);
   const nx = -uy, ny = ux;
-  /* visible troops, then sample into fewer, larger comets */
-  const vis = [];
+  ctx.fillStyle = c.main;
   for (let i = fl.delivered; i < fl.count; i++){
     const arc = fl.prog - i * TROOP_GAP;
-    if (arc < 0) break;
-    if (arc >= fl.len) continue;
-    vis.push({ arc, i });
+    if (arc < 0) break;              /* still forming behind the wall */
+    if (arc >= fl.len) continue;     /* landed, waiting on the server */
+    const off = (i % 5 - 2) * 4.5;
+    const d = a.r + arc;
+    ctx.beginPath();
+    ctx.arc(a.x + ux * d + nx * off, a.y + uy * d + ny * off, 3.1, 0, Math.PI * 2);
+    ctx.fill();
   }
-  if (!vis.length) return;
-  const step = Math.max(1, Math.round(vis.length / 12));
-  const R = 2.7 + Math.min(2.4, (step - 1) * 0.55);
-  ctx.fillStyle = c.main;
-  for (let k = 0; k < vis.length; k += step){
-    const v = vis[k];
-    const off = (v.i % 5 - 2) * 3.6;
-    const d = a.r + v.arc;
-    const x = a.x + ux * d + nx * off, y = a.y + uy * d + ny * off;
-    for (let tr = 3; tr >= 1; tr--){          /* fading trail behind each comet */
-      ctx.globalAlpha = 0.07 * tr;
-      ctx.beginPath();
-      ctx.arc(x - ux * tr * 6, y - uy * tr * 6, R * (1 - tr * 0.16), 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-    ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI * 2); ctx.fill();
-  }
-  ctx.globalAlpha = 1;
 }
 
 function render(now){
   ctx.drawImage(bgCanvas, 0, 0);
+  if (!REDUCED){                       /* a few live twinklers over the cached field */
+    ctx.fillStyle = "#fff";
+    for (let i = 0; i < 44; i++){
+      const st = stars[(i * 7) % stars.length];
+      ctx.globalAlpha = st.a * (0.5 + 0.5 * Math.sin(now / 1000 * st.s + st.p));
+      ctx.beginPath(); ctx.arc(st.x, st.y, st.r + .4, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
   if (!G.nodes.length) return;
 
   ctx.strokeStyle = "rgba(255,255,255,.045)";
@@ -605,8 +610,8 @@ function render(now){
   if (dragging && sel.length){
     const tg = nodeAt({ x:px, y:py });
     const mine = FACTIONS[net.seat] || FACTIONS[0];
-    ctx.setLineDash([4, 8]);
-    ctx.lineWidth = 1.6;
+    ctx.setLineDash([5, 7]);
+    ctx.lineWidth = 2;
     const ex = tg >= 0 ? G.nodes[tg].x : px, ey = tg >= 0 ? G.nodes[tg].y : py;
     for (const s of sel){
       const a = G.nodes[s];
@@ -634,7 +639,7 @@ function render(now){
     const c = paint(n.owner);
     const owned = n.owner !== null;
     const pickable = picking && n.candidate && !owned;
-    /* idle life — glass dots breathe, barely */
+    /* idle life — circles breathe, barely */
     const breathe = REDUCED ? 0 : Math.sin(now / 1100 + i * 1.7) * n.r * 0.012;
     const r = n.r + breathe;
 
@@ -650,50 +655,52 @@ function render(now){
       }
     }
 
+    if (owned){                                     /* soft halo behind owned circles */
+      const R = r * 2.4;
+      ctx.drawImage(glowSprite[n.owner], n.x - R, n.y - R, R * 2, R * 2);
+    }
     if (pickable){                                  /* breathing invite ring */
       const tw = REDUCED ? .6 : 0.5 + 0.5 * Math.sin(now / 420 + i);
-      ctx.strokeStyle = "rgba(143,214,201," + (0.25 + 0.4 * tw) + ")";
-      ctx.lineWidth = 1.8;
+      ctx.strokeStyle = "rgba(62,214,192," + (0.3 + 0.45 * tw) + ")";
+      ctx.lineWidth = 2.6;
       ctx.beginPath(); ctx.arc(n.x, n.y, r + 7 + tw * 4, 0, Math.PI * 2); ctx.stroke();
     }
 
-    /* glass disc — translucent tint + one top-light highlight */
-    ctx.fillStyle = owned ? "rgba(" + c.glow + ",.13)" : "rgba(255,255,255,.035)";
+    /* solid disc + vivid rim */
+    ctx.fillStyle = owned ? c.dim : NEUTRAL.dim;
     ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, Math.PI * 2); ctx.fill();
-    ctx.drawImage(glass, n.x - r, n.y - r, r * 2, r * 2);
     if (n.home){
-      ctx.fillStyle = "rgba(" + c.glow + ",.10)";
+      ctx.fillStyle = c.main; ctx.globalAlpha = .16;
       ctx.beginPath(); ctx.arc(n.x, n.y, r - 5, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 1;
     }
-
-    /* matte rim */
-    ctx.strokeStyle = pickable ? "rgba(143,214,201,.55)" : c.main;
-    ctx.lineWidth = n.home ? 2.4 : 1.5;
-    ctx.globalAlpha = owned ? .95 : pickable ? 1 : .45;
+    ctx.strokeStyle = pickable ? "rgba(62,214,192,.75)" : c.main;
+    ctx.lineWidth = n.home ? 3.2 : 2.2;
+    ctx.globalAlpha = owned || pickable ? 1 : .55;
     ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, Math.PI * 2); ctx.stroke();
     ctx.globalAlpha = 1;
 
     if (n.tier === 2 && !n.home && !pickable){      /* stronghold's inner tick ring */
       ctx.strokeStyle = c.main;
-      ctx.globalAlpha = owned ? .35 : .18;
-      ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.arc(n.x, n.y, r - 5.5, 0, Math.PI * 2); ctx.stroke();
+      ctx.globalAlpha = owned ? .5 : .28;
+      ctx.lineWidth = 1.3;
+      ctx.beginPath(); ctx.arc(n.x, n.y, r - 6, 0, Math.PI * 2); ctx.stroke();
       ctx.globalAlpha = 1;
     }
 
-    if (n.flash > 0){                               /* hit flash — subtle on matte */
-      ctx.fillStyle = "rgba(255,255,255," + (n.flash * .18) + ")";
+    if (n.flash > 0){                               /* hit flash */
+      ctx.fillStyle = "rgba(255,255,255," + (n.flash * .3) + ")";
       ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, Math.PI * 2); ctx.fill();
     }
     if (sel.indexOf(i) >= 0){
-      ctx.strokeStyle = "rgba(233,235,237,.9)";
-      ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.arc(n.x, n.y, r + 5, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = "#fff";
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(n.x, n.y, r + 6, 0, Math.PI * 2); ctx.stroke();
     }
 
     if (!pickable){
-      ctx.fillStyle = owned ? "#F0F2F4" : "rgba(233,235,237,.55)";
-      ctx.font = "500 " + (n.home ? 19 : n.tier === 2 ? 17 : n.tier === 1 ? 15 : 13) + "px " + FONT;
+      ctx.fillStyle = owned ? "#fff" : "rgba(233,235,237,.72)";
+      ctx.font = "600 " + (n.home ? 19 : n.tier === 2 ? 17 : n.tier === 1 ? 15 : 13) + "px " + FONT;
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillText(String(Math.max(0, Math.round(n.disp))), n.x, n.y + 1);
     }
@@ -712,8 +719,8 @@ function render(now){
    ══════════════════════════════════════════════════════════════ */
 const TUT = { flights: [], nextId: 1, step: 0 };
 const TUT_STEPS = [
-  { msg: "This pale circle is your base. <b>Drag from it onto the grey circle</b> to send half its troops.", done: () => G.nodes[1] && G.nodes[1].owner === 0 },
-  { msg: "Nice — you took it, and circles you own slowly grow. Now <b>take the rose base</b>. Drag from both of your circles at once if you need more troops.", done: () => G.nodes[2] && G.nodes[2].owner === 0 },
+  { msg: "This teal circle is your base. <b>Drag from it onto the grey circle</b> to send half its troops.", done: () => G.nodes[1] && G.nodes[1].owner === 0 },
+  { msg: "Nice — you took it, and circles you own slowly grow. Now <b>take the red base</b>. Drag from both of your circles at once if you need more troops.", done: () => G.nodes[2] && G.nodes[2].owner === 0 },
   { msg: "That's the whole game: send, capture, and hold everything to win. You're ready.", done: null }
 ];
 function tutBoard(){
