@@ -1,0 +1,18 @@
+{
+  "name": "kairo-ad",
+  "private": true,
+  "type": "module",
+  "description": "30s Apple-style SaaS ad for a fictional product, rendered from HTML with Playwright + ffmpeg",
+  "scripts": {
+    "music": "node music.mjs",
+    "stills": "node render.mjs --stills",
+    "render": "node render.mjs"
+  },
+  "dependencies": {
+    "@fontsource-variable/inter": "^5.2.5",
+    "@fontsource-variable/inter-tight": "^5.2.5"
+  },
+  "devDependencies": {
+    "playwright": "1.56.1"
+  }
+}

@@ -1,0 +1,754 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Kairo — 30s spot</title>
+<link rel="stylesheet" href="node_modules/@fontsource-variable/inter/index.css">
+<link rel="stylesheet" href="node_modules/@fontsource-variable/inter-tight/index.css">
+<style>
+  :root {
+    --grad: linear-gradient(95deg, #9583ff 0%, #d66bf5 48%, #ff8a5b 100%);
+    --ink: #f5f5f7;
+    --mute: #86868b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1920px; height: 1080px; background: #000; overflow: hidden; }
+  #stage {
+    position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #000;
+    color: var(--ink); font-family: 'Inter Variable', sans-serif;
+    -webkit-font-smoothing: antialiased; font-feature-settings: 'cv11', 'ss01';
+  }
+  .scene { position: absolute; inset: 0; display: none; }
+  .abs { position: absolute; left: 0; top: 0; will-change: transform, opacity; }
+  .ctr { width: 1920px; text-align: center; }
+  .h { font-family: 'Inter Tight Variable', sans-serif; font-weight: 700; letter-spacing: -0.045em; line-height: 1.04; white-space: nowrap; }
+  .grad { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .tnum { font-feature-settings: 'tnum'; }
+
+  /* ---------- S1 chaos ---------- */
+  .pill {
+    display: flex; align-items: center; gap: 14px; white-space: nowrap;
+    padding: 16px 28px 16px 22px; border-radius: 999px;
+    background: rgba(34, 35, 40, .94); border: 1px solid rgba(255,255,255,.09);
+    font-size: 26px; font-weight: 500; color: #e8e8ed; box-shadow: 0 14px 40px rgba(0,0,0,.55);
+  }
+  .pill i { width: 12px; height: 12px; border-radius: 50%; display: block; }
+  .note {
+    width: 420px; display: flex; gap: 16px; align-items: flex-start; padding: 18px 20px;
+    border-radius: 26px; background: rgba(38, 39, 44, .96); border: 1px solid rgba(255,255,255,.08);
+    box-shadow: 0 18px 50px rgba(0,0,0,.6);
+  }
+  .note .ic { flex: none; width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center; }
+  .note .tx { flex: 1; min-width: 0; }
+  .note b { display: block; font-size: 20px; font-weight: 650; color: #f5f5f7; margin-bottom: 3px; }
+  .note span { display: block; font-size: 19px; color: #a1a1a6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .note em { font-style: normal; font-size: 15px; color: #6e6e73; }
+  .badge {
+    width: 64px; height: 64px; border-radius: 50%; background: #ff453a; color: #fff;
+    display: grid; place-items: center; font-size: 28px; font-weight: 700; box-shadow: 0 10px 30px rgba(255,69,58,.35);
+  }
+
+  /* ---------- App window ---------- */
+  .win {
+    position: absolute; width: 1560px; height: 800px; border-radius: 18px; overflow: hidden;
+    background: #141518; border: 1px solid rgba(255,255,255,.1);
+    box-shadow: 0 50px 140px rgba(0,0,0,.7), 0 0 0 1px rgba(0,0,0,.6);
+  }
+  .win * { position: absolute; }
+  .win .tb { left: 0; top: 0; width: 1560px; height: 46px; background: #1a1b1e; border-bottom: 1px solid rgba(255,255,255,.06); }
+  .win .tl { top: 17px; width: 12px; height: 12px; border-radius: 50%; }
+  .win .ttl { left: 0; width: 1560px; top: 14px; text-align: center; font-size: 14px; color: #8e8e93; font-weight: 500; }
+  .win .side { left: 0; top: 46px; width: 230px; height: 754px; background: #111214; border-right: 1px solid rgba(255,255,255,.06); }
+  .win .nav { left: 14px; width: 202px; height: 40px; border-radius: 10px; font-size: 16px; color: #a1a1a6; font-weight: 500; }
+  .win .nav.on { background: rgba(255,255,255,.08); color: #f5f5f7; }
+  .win .nav svg { left: 12px; top: 11px; }
+  .win .nav span { left: 44px; top: 10px; white-space: nowrap; }
+  .win .hdr { font-size: 30px; font-weight: 700; letter-spacing: -0.03em; font-family: 'Inter Tight Variable'; white-space: nowrap; }
+  .win .sub { font-size: 15px; color: #8e8e93; white-space: nowrap; }
+  .win .hl { height: 1px; background: rgba(255,255,255,.06); }
+  .win .vl { width: 1px; background: rgba(255,255,255,.06); }
+  .win .tlab { font-size: 12px; color: #6e6e73; width: 50px; text-align: right; }
+  .win .day { font-size: 14px; color: #8e8e93; font-weight: 500; white-space: nowrap; }
+  .win .mtg {
+    border-radius: 8px; background: #23252c; border-left: 3px solid #5d6273; overflow: hidden;
+  }
+  .win .mtg b, .win .task b { position: static; display: block; font-size: 14px; font-weight: 600; color: #e3e4ea; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .win .mtg em, .win .task em { position: static; display: block; font-style: normal; font-size: 12.5px; color: #8e8e93; margin-top: 2px; white-space: nowrap; }
+  .win .mtg div, .win .task div { position: static; padding: 7px 10px; }
+  .win .task { border-radius: 10px; overflow: hidden; border-left: 3px solid; }
+  .win .task b { color: #fff; }
+  .win .panel { left: 1240px; top: 46px; width: 320px; height: 754px; background: #111214; border-left: 1px solid rgba(255,255,255,.06); }
+  .win .cta {
+    left: 1256px; top: 716px; width: 288px; height: 56px; border-radius: 14px; background: var(--grad);
+    color: #fff; font-size: 18px; font-weight: 650; overflow: hidden;
+  }
+  .win .cta span { left: 0; top: 0; width: 288px; height: 56px; line-height: 56px; text-align: center; white-space: nowrap; }
+  .win .lbl * { position: static; }
+  .scard .st, .scard .st * { position: static; }
+  .win .now { height: 2px; background: #ff5f7e; }
+  .win .now::before { content: ''; position: absolute; left: -5px; top: -4px; width: 10px; height: 10px; border-radius: 50%; background: #ff5f7e; }
+
+  /* ---------- Focus scene ---------- */
+  .fcard {
+    width: 640px; height: 380px; border-radius: 34px; overflow: hidden;
+    background: linear-gradient(150deg, #322a63 0%, #221d45 55%, #1a1733 100%);
+    border: 1px solid rgba(170,150,255,.35); box-shadow: 0 40px 120px rgba(80,60,200,.35);
+  }
+  .invite {
+    width: 340px; height: 88px; border-radius: 22px; display: flex; align-items: center; gap: 16px; padding: 0 20px;
+    background: rgba(40,41,47,.97); border: 1px solid rgba(255,255,255,.1); box-shadow: 0 20px 50px rgba(0,0,0,.6);
+  }
+  .invite .av { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 18px; color: #fff; flex: none; }
+  .invite b { display: block; font-size: 21px; font-weight: 650; }
+  .invite span { display: block; font-size: 16px; color: #a1a1a6; margin-top: 2px; }
+
+  /* ---------- Summary scene (light) ---------- */
+  .light { background: #f5f5f7; color: #1d1d1f; }
+  .scard {
+    width: 1120px; height: 690px; border-radius: 36px; background: #fff;
+    box-shadow: 0 40px 100px rgba(0,0,0,.08), 0 0 0 1px rgba(0,0,0,.04);
+  }
+  .scard * { position: absolute; }
+  .wbar { width: 7px; border-radius: 4px; background: linear-gradient(180deg, #9583ff, #d66bf5); }
+  .sline { font-size: 25px; color: #1d1d1f; white-space: nowrap; letter-spacing: -0.01em; }
+  .sline span { position: static; display: inline-block; white-space: pre; }
+  .arow { height: 52px; width: 1040px; }
+  .chk { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #c7c7cc; top: 11px; left: 0; }
+  .alab { left: 48px; top: 12px; font-size: 22px; font-weight: 500; color: #1d1d1f; white-space: nowrap; }
+  .achip {
+    right: 0; top: 6px; height: 40px; padding: 0 18px 0 44px; border-radius: 20px; background: #f2effe; color: #5b45e0;
+    font-size: 17px; font-weight: 600; line-height: 40px; white-space: nowrap;
+  }
+
+  /* ---------- Devices ---------- */
+  .lap-screen { width: 1120px; height: 700px; border-radius: 26px; background: #050506; border: 2px solid #2e2e33; overflow: hidden; }
+  .lap-inner { position: absolute; left: 18px; top: 18px; width: 1080px; height: 660px; border-radius: 10px; overflow: hidden;
+    background: radial-gradient(120% 90% at 20% 10%, #2a2160 0%, transparent 55%), radial-gradient(100% 80% at 90% 100%, #5a2a3c 0%, transparent 55%), #0d0d12; }
+  .lap-base { width: 1300px; height: 28px; border-radius: 4px 4px 22px 22px; background: linear-gradient(180deg, #4a4a50 0%, #2a2a2e 45%, #161618 100%); }
+  .phone { width: 340px; height: 700px; border-radius: 60px; background: #0a0a0b; border: 2px solid #3d3d42; box-shadow: 0 40px 100px rgba(0,0,0,.7); overflow: hidden; }
+  .phone * { position: absolute; }
+  .pscr { left: 10px; top: 10px; width: 316px; height: 676px; border-radius: 50px; background: #0f0f11; overflow: hidden; }
+  .pitem { left: 64px; width: 232px; border-radius: 14px; border-left: 3px solid; overflow: hidden; }
+  .pitem b { position: static; display: block; font-size: 15px; font-weight: 650; color: #fff; padding: 9px 12px 0; white-space: nowrap; }
+  .pitem em { position: static; display: block; font-style: normal; font-size: 12.5px; color: #a1a1a6; padding: 2px 12px; white-space: nowrap; }
+  .ptime { left: 14px; width: 42px; text-align: right; font-size: 11.5px; color: #6e6e73; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+// ============================================================================
+// Kairo — 30s spot. Everything below is a pure function of time t (seconds),
+// so any frame can be rendered independently: window.render(t).
+// Music runs at 120 BPM (one beat = 0.5s, one bar = 2s); cuts land on beats.
+// ============================================================================
+
+const W = 1920, H = 1080, CX = 960, CY = 540;
+const stage = document.getElementById('stage');
+
+// ---------- math / easing ----------
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, p) => a + (b - a) * p;
+const E = {
+  lin: p => p,
+  out2: p => 1 - (1 - p) * (1 - p),
+  in2: p => p * p,
+  out3: p => 1 - (1 - p) ** 3,
+  in3: p => p * p * p,
+  io3: p => p < .5 ? 4 * p * p * p : 1 - (-2 * p + 2) ** 3 / 2,
+  out5: p => 1 - (1 - p) ** 5,
+  outExpo: p => p >= 1 ? 1 : 1 - 2 ** (-10 * p),
+  inExpo: p => p <= 0 ? 0 : 2 ** (10 * p - 10),
+  ioExpo: p => p <= 0 ? 0 : p >= 1 ? 1 : p < .5 ? 2 ** (20 * p - 10) / 2 : (2 - 2 ** (-20 * p + 10)) / 2,
+  outBack: p => { const c1 = 1.4, c3 = c1 + 1; return 1 + c3 * (p - 1) ** 3 + c1 * (p - 1) ** 2; },
+  spring: p => p >= 1 ? 1 : 1 - Math.exp(-6.5 * p) * Math.cos(9.5 * p),
+};
+const P = (t, a, b, e = E.out3) => e(clamp((t - a) / (b - a)));
+function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const hex = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+const mix = (a, b, p) => { const A = hex(a), B = hex(b); return `rgb(${A.map((v, i) => Math.round(lerp(v, B[i], p))).join(',')})`; };
+
+// ---------- dom helpers ----------
+function el(tag, cls, parent, html, style) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (html != null) e.innerHTML = html;
+  if (style) Object.assign(e.style, style);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function tf(e, o) {
+  let s = `translate(${(o.x || 0).toFixed(2)}px,${(o.y || 0).toFixed(2)}px)`;
+  if (o.rx) s += ` rotateX(${o.rx}deg)`;
+  if (o.r) s += ` rotate(${o.r}deg)`;
+  const k = o.s ?? 1;
+  if (k !== 1) s += ` scale(${k})`;
+  e.style.transform = s;
+  if (o.o !== undefined) e.style.opacity = clamp(o.o);
+  if (o.b !== undefined) e.style.filter = o.b > 0.1 ? `blur(${o.b.toFixed(2)}px)` : 'none';
+}
+const show = (e, on) => { e.style.display = on ? 'block' : 'none'; };
+
+// ---------- icons ----------
+let gid = 0;
+function markSVG(size) {
+  const id = 'kg' + (gid++);
+  return `<svg width="${size}" height="${size}" viewBox="0 0 100 100" style="display:block;overflow:visible">
+    <defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7d6bff"/><stop offset=".55" stop-color="#d66bf5"/><stop offset="1" stop-color="#ff8a5b"/></linearGradient></defs>
+    <rect width="100" height="100" rx="27" fill="url(#${id})"/>
+    <path class="arc" d="M50 25 A25 25 0 1 1 25 50" stroke="#fff" stroke-width="9" fill="none" stroke-linecap="round" stroke-dasharray="118" stroke-dashoffset="0"/>
+    <circle class="dot" cx="33" cy="33" r="6.5" fill="#fff"/>
+  </svg>`;
+}
+const SPARK = (s, c = '#fff') => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" style="display:inline-block;vertical-align:-0.12em"><path d="M12 1.5C12.7 8 16 11.3 22.5 12 16 12.7 12.7 16 12 22.5 11.3 16 8 12.7 1.5 12 8 11.3 11.3 8 12 1.5Z" fill="${c}"/></svg>`;
+const CHECK = (s, c = '#fff', w = 3) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" style="display:block"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="${c}" stroke-width="${w}" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const ICON = {
+  today: '<circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M9 5v4l2.5 2" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/>',
+  week: '<rect x="2" y="3" width="14" height="13" rx="3" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M2 7h14M6 1.5v3M12 1.5v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+  focus: '<path d="M14.5 11.5A6.5 6.5 0 0 1 6.5 3.5a6.5 6.5 0 1 0 8 8z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/>',
+  meet: '<rect x="1.5" y="4.5" width="10" height="9" rx="2.5" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M11.5 8l5-3v8l-5-3" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/>',
+  tasks: '<rect x="2" y="2" width="14" height="14" rx="4" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M5.5 9l2.5 2.5 4.5-5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/>',
+  insights: '<path d="M3 15V9M9 15V3M15 15v-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+};
+const ico = (k, s = 18) => `<svg width="${s}" height="${s}" viewBox="0 0 18 18">${ICON[k]}</svg>`;
+
+// ============================================================================
+// Product data — the week Kairo plans
+// ============================================================================
+const COL = ['Mon 6', 'Tue 7', 'Wed 8', 'Thu 9', 'Fri 10'];
+const GX0 = 290, COLW = 188, GY0 = 176, HOUR = 68;
+const slot = (c, h0, h1) => ({ x: GX0 + c * COLW + 4, y: GY0 + (h0 - 9) * HOUR + 2, w: COLW - 8, h: (h1 - h0) * HOUR - 4 });
+const fmtH = h => { const hh = Math.floor(h), mm = Math.round((h - hh) * 60); const ap = hh >= 12 ? 'PM' : 'AM'; return `${((hh + 11) % 12) + 1}:${String(mm).padStart(2, '0')} ${ap}`; };
+const fmtR = (a, b) => `${fmtH(a).replace(/ (AM|PM)/, '')} – ${fmtH(b)}`;
+const MEETINGS = [
+  [0, 9, 9.5, 'Standup'], [0, 13, 14, 'Design crit'], [1, 14, 15, 'Customer call'],
+  [2, 9, 9.5, 'Standup'], [2, 11, 12, '1:1 · Marco'], [3, 15, 16, 'Hiring sync'],
+  [4, 9, 9.5, 'Standup'], [4, 12, 13, 'Team lunch'], [3, 13, 13.5, 'Standup'],
+];
+const TASKS = [
+  { name: 'Deep work · Roadmap', dur: '2h 30m', c: '#8b7bff', at: [1, 9.5, 12] },
+  { name: 'Write launch post', dur: '1h 30m', c: '#e26bd9', at: [0, 10, 11.5] },
+  { name: 'Review designs', dur: '1h', c: '#4f9bff', at: [2, 13, 14] },
+  { name: 'Investor update', dur: '1h', c: '#ffb547', at: [3, 10, 11] },
+  { name: 'Prep board deck', dur: '2h', c: '#ff7a59', at: [4, 14, 16] },
+  { name: 'Gym', dur: '1h', c: '#3dd68c', at: [2, 17, 18] },
+  { name: 'Inbox zero', dur: '30m', c: '#2fd4c7', at: [3, 9, 9.5] },
+];
+const PANEL = i => ({ x: 1256, y: 118 + i * 78, w: 288, h: 66 });
+
+function buildApp(parent, planned) {
+  const win = el('div', 'win', parent);
+  const tb = el('div', 'tb', win);
+  ['#ff5f57', '#febc2e', '#28c840'].forEach((c, i) => el('div', 'tl', tb, null, { left: 20 + i * 20 + 'px', background: c }));
+  el('div', 'ttl', tb, 'Kairo');
+  const side = el('div', 'side', win);
+  el('div', null, side, markSVG(28), { left: '22px', top: '22px' });
+  el('div', null, side, 'Kairo', { left: '60px', top: '24px', fontSize: '19px', fontWeight: 700, letterSpacing: '-0.02em' });
+  [['today', 'Today'], ['week', 'Week'], ['focus', 'Focus'], ['meet', 'Meetings'], ['tasks', 'Tasks'], ['insights', 'Insights']].forEach(([k, n], i) => {
+    const nv = el('div', 'nav' + (i === 1 ? ' on' : ''), side, `${ico(k)}<span>${n}</span>`, { top: 84 + i * 46 + 'px' });
+  });
+  el('div', null, side, '', { left: '22px', top: '686px', width: '36px', height: '36px', borderRadius: '50%', background: 'linear-gradient(135deg,#ffb547,#ff7a59)' });
+  el('div', null, side, '<b style="position:static;display:block;font-size:15px;color:#f5f5f7;font-weight:600">Maya Chen</b><span style="position:static;display:block;font-size:13px;color:#8e8e93">Product Lead</span>', { left: '70px', top: '685px', whiteSpace: 'nowrap' });
+
+  el('div', 'hdr', win, 'October 6 – 10', { left: '262px', top: '66px' });
+  el('div', 'sub', win, 'Week 41 · 9 meetings', { left: '264px', top: '106px', display: 'none' });
+  // header buttons
+  el('div', null, win, '<span style="position:static">Today</span>', { left: '1000px', top: '68px', height: '36px', padding: '0 16px', lineHeight: '36px', borderRadius: '10px', border: '1px solid rgba(255,255,255,.12)', fontSize: '14px', color: '#d1d1d6', fontWeight: 500 });
+  el('div', null, win, '<span style="position:static">‹ &nbsp; ›</span>', { left: '1086px', top: '68px', height: '36px', width: '64px', lineHeight: '35px', textAlign: 'center', borderRadius: '10px', border: '1px solid rgba(255,255,255,.12)', fontSize: '18px', color: '#d1d1d6' });
+  el('div', null, win, '<span style="position:static">Week ▾</span>', { left: '1160px', top: '68px', height: '36px', width: '66px', lineHeight: '36px', textAlign: 'center', borderRadius: '10px', background: 'rgba(255,255,255,.08)', fontSize: '14px', color: '#f5f5f7', fontWeight: 500 });
+
+  COL.forEach((d, i) => {
+    const today = i === 1;
+    const [dn, dd] = d.split(' ');
+    el('div', 'day', win, `<span style="position:static;color:${today ? '#f5f5f7' : '#8e8e93'}">${dn}</span> <span style="position:static;display:inline-block;width:30px;height:30px;line-height:30px;text-align:center;border-radius:50%;margin-left:4px;${today ? 'background:linear-gradient(135deg,#9583ff,#d66bf5);color:#fff;font-weight:700' : 'color:#c7c7cc'}">${dd}</span>`, { left: GX0 + i * COLW + 12 + 'px', top: '132px' });
+  });
+  for (let h = 9; h <= 18; h++) {
+    el('div', 'hl', win, null, { left: GX0 + 'px', top: GY0 + (h - 9) * HOUR + 'px', width: 5 * COLW + 'px' });
+    if (h < 18) el('div', 'tlab', win, `${((h + 11) % 12) + 1} ${h >= 12 ? 'PM' : 'AM'}`, { left: '232px', top: GY0 + (h - 9) * HOUR - 7 + 'px' });
+  }
+  for (let c = 0; c <= 5; c++) el('div', 'vl', win, null, { left: GX0 + c * COLW + 'px', top: '124px', height: 800 - 124 + 'px' });
+  MEETINGS.forEach(([c, a, b, n]) => {
+    const s = slot(c, a, b);
+    el('div', 'mtg', win, `<div><b>${n}</b>${b - a >= 1 ? `<em>${fmtR(a, b)}</em>` : ''}</div>`, { left: s.x + 'px', top: s.y + 'px', width: s.w + 'px', height: s.h + 'px' });
+  });
+  // now line (Tue, 10:40)
+  const nowL = el('div', 'now', win, null, { left: GX0 + COLW + 'px', top: GY0 + (10.67 - 9) * HOUR + 'px', width: COLW + 'px' });
+
+  // right panel
+  const panel = el('div', 'panel', win);
+  el('div', null, win, 'To plan', { left: '1260px', top: '68px', fontSize: '20px', fontWeight: 700, letterSpacing: '-0.01em' });
+  const count = el('div', null, win, '7', { left: '1342px', top: '70px', height: '24px', minWidth: '24px', padding: '0 7px', lineHeight: '24px', textAlign: 'center', borderRadius: '12px', background: 'rgba(255,255,255,.1)', fontSize: '13px', fontWeight: 650, color: '#d1d1d6' });
+  const done = el('div', null, win, `<div style="position:static;width:64px;height:64px;border-radius:50%;margin:0 auto 18px;background:linear-gradient(135deg,#9583ff,#d66bf5);display:grid;place-items:center">${CHECK(34, '#fff', 3.2)}</div><b style="position:static;display:block;font-size:20px;color:#f5f5f7;font-weight:650">All planned</b><span style="position:static;display:block;font-size:15px;color:#8e8e93;margin-top:6px">7 tasks · 9.5 hrs of focus</span>`, { left: '1240px', top: '300px', width: '320px', textAlign: 'center' });
+
+  const tasks = TASKS.map((tk, i) => {
+    const e = el('div', 'task', win, `<div><b>${tk.name}</b><em>${tk.dur}</em></div>`);
+    e.style.borderLeftColor = tk.c;
+    return e;
+  });
+  const cta = el('div', 'cta', win, `<span class="lbl">${SPARK(17)}&nbsp; Plan my week</span>`);
+  const shimmer = el('div', null, cta, '', { left: '-120px', top: '0', width: '120px', height: '56px', background: 'linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent)', opacity: 0 });
+  const api = {
+    win, tasks, count, done, cta, shimmer, lbl: cta.querySelector('.lbl'),
+    setTask(i, p, lift = 0) { // p: 0 = in panel, 1 = placed on calendar
+      const a = PANEL(i), [c, h0, h1] = TASKS[i].at, b = slot(c, h0, h1);
+      const e = tasks[i];
+      const pc = clamp(p, 0, 1.2);
+      e.style.left = lerp(a.x, b.x, p) + 'px';
+      e.style.top = lerp(a.y, b.y, p) - Math.sin(clamp(p) * Math.PI) * 40 + 'px';
+      e.style.width = Math.max(40, lerp(a.w, b.w, p)) + 'px';
+      e.style.height = Math.max(30, lerp(a.h, b.h, p)) + 'px';
+      e.style.background = mix('#1d1e23', TASKS[i].c, lerp(0, .26, clamp(pc)) + lift * .25);
+      e.style.boxShadow = lift > 0 ? `0 ${20 * lift}px ${50 * lift}px rgba(0,0,0,${.5 * lift}), 0 0 ${40 * lift}px ${TASKS[i].c}55` : 'none';
+      e.style.transform = `scale(${1 + lift * .06})`;
+      e.style.zIndex = lift > 0 ? 5 : 1;
+    },
+  };
+  if (planned) {
+    TASKS.forEach((_, i) => api.setTask(i, 1));
+    count.textContent = '0';
+    cta.style.display = 'none';
+  } else {
+    TASKS.forEach((_, i) => api.setTask(i, 0));
+    done.style.opacity = 0;
+  }
+  return api;
+}
+
+// ============================================================================
+// SCENE 1 (0 – 4s): the problem — words on the beat, then notification chaos
+// ============================================================================
+const s1 = el('section', 'scene', stage);
+const WORDS = ['Meetings.', 'Messages.', 'Deadlines.', 'Reminders.'];
+const WT = [0.5, 1.0, 1.5, 2.0];
+const wordEls = WORDS.map(w => el('div', 'abs h ctr', s1, w, { fontSize: '172px', top: CY - 92 + 'px' }));
+const chipLayer = el('div', 'abs', s1, null, { width: W + 'px', height: H + 'px' });
+const CHIP_TEXT = ['Q4 roadmap review', 'Reply to Priya', 'Ship v2.4', 'Budget sign-off', '1:1 with Marco', 'Design crit', 'Investor update', 'Fix onboarding bug',
+  'Dentist 3:30', 'Hiring sync', 'Write launch blog', 'Board deck', 'Expense report', 'Gym', 'Customer call', 'Renew contract', 'Interview: Sam', 'Plan offsite'];
+const NOTES = [
+  ['Jordan', 'Can we move the sync to 3?', '#4f9bff', 'J'], ['Calendar', 'Invite: Weekly planning', '#ff7a59', '31'], ['Mail', '23 new messages', '#3dd68c', '@'],
+  ['Reminder', 'Expense report due today', '#ffb547', '!'], ['Priya', 'Did you see the deck?', '#e26bd9', 'P'], ['Calendar', 'Conflict: Design crit', '#ff453a', '31'],
+  ['Alex', 'Quick call before 5?', '#8b7bff', 'A'], ['Tasks', '12 tasks overdue', '#2fd4c7', '✓'],
+];
+const DOTC = ['#8b7bff', '#e26bd9', '#4f9bff', '#ffb547', '#ff7a59', '#3dd68c', '#2fd4c7'];
+const chips = [];
+{
+  const R = rng(7);
+  const cols = 6, rows = 5;
+  const cells = [];
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) cells.push([c, r]);
+  for (let i = cells.length - 1; i > 0; i--) { const j = Math.floor(R() * (i + 1)); [cells[i], cells[j]] = [cells[j], cells[i]]; }
+  let ti = 0, ni = 0;
+  cells.forEach(([c, r], i) => {
+    let e;
+    if (i % 3 === 1 && ni < NOTES.length) {
+      const [t, b, col, g] = NOTES[ni++];
+      e = el('div', 'abs note', chipLayer, `<div class="ic" style="background:${col}"><span style="color:#fff;font-weight:800;font-size:${g.length > 1 ? 17 : 22}px">${g}</span></div><div class="tx"><b>${t}</b><span>${b}</span></div><em>now</em>`);
+    } else if (i === 9 || i === 22) {
+      e = el('div', 'abs badge', chipLayer, i === 9 ? '47' : '99+', { fontSize: i === 22 ? '22px' : '28px' });
+    } else {
+      e = el('div', 'abs pill', chipLayer, `<i style="background:${DOTC[ti % DOTC.length]}"></i>${CHIP_TEXT[ti++ % CHIP_TEXT.length]}`);
+    }
+    const fx = 60 + (c + .5) * (1800 / cols) + (R() - .5) * 150;
+    const fy = 40 + (r + .5) * (1000 / rows) + (R() - .5) * 90;
+    let dx = fx - CX, dy = fy - CY; const d = Math.hypot(dx, dy) || 1; dx /= d; dy /= d;
+    chips.push({ e, fx, fy, dx, dy, r0: (R() - .5) * 40, rf: (R() - .5) * 12, t0: 2.28 + i * 0.036, ph: R() * 6.28 });
+  });
+}
+const dim = el('div', 'abs', s1, null, { left: CX - 800 + 'px', top: CY - 330 + 'px', width: '1600px', height: '660px', background: 'radial-gradient(closest-side, rgba(0,0,0,.92), rgba(0,0,0,.75) 55%, transparent)' });
+const lot = el('div', 'abs h ctr', s1, 'It’s a lot.', { fontSize: '156px', top: CY - 84 + 'px' });
+const flash = el('div', 'abs', s1, null, { left: CX - 100 + 'px', top: CY - 100 + 'px', width: '200px', height: '200px', borderRadius: '50%', background: 'radial-gradient(circle, #fff 0%, rgba(255,255,255,.7) 18%, rgba(214,107,245,.35) 42%, transparent 70%)' });
+
+function scene1(t) {
+  wordEls.forEach((e, k) => {
+    const a = WT[k], b = k < 3 ? WT[k + 1] : 2.62;
+    const on = t >= a && t < b;
+    show(e, on);
+    if (!on) return;
+    const out = k === 3 ? P(t, 2.42, 2.62, E.in2) : 0;
+    tf(e, { s: 1.12 - .12 * P(t, a, a + .5, E.outExpo) + out * .08, o: P(t, a, a + .06) * (1 - out), b: 14 * (1 - P(t, a, a + .2)) + out * 10 });
+  });
+  const im = P(t, 3.55, 3.97, E.in3);
+  const imFade = 1 - P(t, 3.78, 3.97);
+  chips.forEach((c, i) => {
+    if (t < c.t0) { c.e.style.opacity = 0; return; }
+    const w = c.w || (c.w = c.e.offsetWidth), h = c.h || (c.h = c.e.offsetHeight);
+    const a = P(t, c.t0, c.t0 + .6, E.outExpo);
+    let x = c.fx + c.dx * 1200 * (1 - a) + Math.sin(t * 1.6 + c.ph) * 6;
+    let y = c.fy + c.dy * 1200 * (1 - a) + Math.cos(t * 1.3 + c.ph) * 5;
+    x = lerp(x, CX, im); y = lerp(y, CY, im);
+    tf(c.e, { x: x - w / 2, y: y - h / 2, r: lerp(c.r0, c.rf, a) * (1 - im) + im * 30 * (i % 2 ? 1 : -1), s: (.86 + .14 * a) * (1 - .85 * im), o: P(t, c.t0, c.t0 + .08) * imFade });
+  });
+  tf(dim, { o: P(t, 2.9, 3.25) * (1 - im) });
+  const lotIn = 2.95;
+  show(lot, t >= lotIn);
+  tf(lot, { s: (1.1 - .1 * P(t, lotIn, lotIn + .5, E.outExpo)) * (1 - .6 * im), o: P(t, lotIn, lotIn + .06) * (1 - P(t, 3.7, 3.92)), b: 14 * (1 - P(t, lotIn, lotIn + .2)) + 8 * im });
+  const f = P(t, 3.9, 4.25, E.outExpo);
+  tf(flash, { s: .01 + f * 14, o: t < 3.9 ? 0 : P(t, 3.9, 3.95) * (1 - P(t, 4.02, 4.5, E.out2)) });
+}
+
+// ============================================================================
+// SCENE 2 (4 – 6s): Meet Kairo
+// ============================================================================
+const s2 = el('section', 'scene', stage);
+const glow = el('div', 'abs', s2, null, {
+  left: CX - 600 + 'px', top: CY - 600 + 'px', width: '1200px', height: '1200px', borderRadius: '50%',
+  background: 'radial-gradient(circle at 38% 42%, rgba(125,107,255,.55), transparent 55%), radial-gradient(circle at 64% 60%, rgba(255,138,91,.42), transparent 55%), radial-gradient(circle at 50% 50%, rgba(214,107,245,.38), transparent 62%)',
+  filter: 'blur(70px)',
+});
+const lock = el('div', 'abs', s2, null, { width: W + 'px', height: H + 'px' });
+const mark = el('div', 'abs', lock, markSVG(150));
+const word = el('div', 'abs h', lock, 'Kairo', { fontSize: '156px', letterSpacing: '-0.05em' });
+const tagline = el('div', 'abs ctr', lock, 'Your calendar, on autopilot.', { fontSize: '46px', fontWeight: 500, color: '#a1a1a6', top: '640px', letterSpacing: '-0.015em' });
+let wordW = 0;
+
+function lockup(t, t0, markEl, wordEl, cy) {
+  // returns positions for a centered mark + wordmark lockup animating in from t0
+  const total = 150 + 36 + wordW;
+  const xFinal = CX - total / 2;
+  const slide = P(t, t0 + .62, t0 + 1.15, E.io3);
+  const mx = lerp(CX - 75, xFinal, slide);
+  const ms = lerp(.35, 1, P(t, t0, t0 + .6, E.outBack));
+  tf(markEl, { x: mx, y: cy - 75, s: ms, r: -40 * (1 - P(t, t0, t0 + .7, E.out3)), o: P(t, t0, t0 + .12) });
+  markEl.querySelector('.arc').style.strokeDashoffset = 118 * (1 - P(t, t0 + .08, t0 + .75, E.io3));
+  const dot = markEl.querySelector('.dot');
+  const ds = P(t, t0 + .55, t0 + .85, E.outBack);
+  dot.setAttribute('r', (6.5 * ds).toFixed(2));
+  const wp = P(t, t0 + .7, t0 + 1.2, E.out3);
+  wordEl.style.clipPath = `inset(-20% ${(100 - 100 * wp).toFixed(2)}% -20% 0)`;
+  tf(wordEl, { x: mx + 186 - 30 * (1 - wp), y: cy - 92, o: P(t, t0 + .7, t0 + .8) });
+}
+
+function scene2(t) {
+  const out = P(t, 5.72, 6.02, E.in2);
+  tf(glow, { s: lerp(.25, 1, P(t, 3.95, 4.9, E.outExpo)) * (1 + .03 * Math.sin(t * 3)), r: t * 14, o: P(t, 3.95, 4.2) * .9 * (1 - out) });
+  lockup(t, 4.0, mark, word, 500);
+  tf(tagline, { y: 24 * (1 - P(t, 5.05, 5.6, E.out3)), o: P(t, 5.05, 5.35) });
+  tf(lock, { s: 1 - .06 * out, o: 1 - out, b: 12 * out, y: -30 * out });
+}
+
+// ============================================================================
+// SCENE 3 (6 – 12s): hero product — Kairo plans the week
+// ============================================================================
+const s3 = el('section', 'scene', stage);
+const cam3 = el('div', 'abs', s3, null, { width: W + 'px', height: H + 'px', transformOrigin: '0 0' });
+const h3a = el('div', 'abs h ctr', cam3, 'Drop in your to-dos.', { fontSize: '78px', top: '74px' });
+const h3b = el('div', 'abs h ctr', cam3, 'Kairo <span class="grad">plans the week.</span>', { fontSize: '78px', top: '74px' });
+const persp = el('div', 'abs', cam3, null, { width: W + 'px', height: H + 'px', perspective: '2400px', perspectiveOrigin: '50% 100%' });
+const appGlow = el('div', 'abs', persp, null, { left: '360px', top: '520px', width: '1200px', height: '520px', borderRadius: '50%', background: 'radial-gradient(closest-side, rgba(150,110,255,.55), rgba(214,107,245,.25) 50%, transparent)', filter: 'blur(60px)' });
+const winWrap = el('div', 'abs', persp, null, { left: '180px', top: '226px', width: '1560px', height: '800px', transformOrigin: '50% 100%' });
+const app = buildApp(winWrap, false);
+const cursor = el('div', 'abs', winWrap, `<svg width="34" height="34" viewBox="0 0 24 24"><path d="M5 2.5l13.5 12.2-6.3.5 3.6 7.1-2.6 1.3-3.6-7.2-4.6 4.2z" fill="#fff" stroke="#000" stroke-width="1.3" stroke-linejoin="round"/></svg>`, { zIndex: 10 });
+const ripple = el('div', 'abs', winWrap, null, { width: '60px', height: '60px', borderRadius: '50%', border: '2px solid rgba(255,255,255,.8)', zIndex: 9 });
+const TASK_T0 = 8.62, TASK_GAP = 0.2;
+const DEEP = slot(1, 9.5, 12);
+const DEEP_C = { x: 180 + DEEP.x + DEEP.w / 2, y: 226 + DEEP.y + DEEP.h / 2 };
+
+function scene3(t) {
+  // window rise
+  const rise = P(t, 5.95, 7.25, E.outExpo);
+  tf(winWrap, { y: 380 * (1 - rise), rx: 34 * (1 - rise), s: .9 + .1 * rise, o: P(t, 5.95, 6.25) });
+  tf(appGlow, { o: rise * .85, s: .8 + .2 * rise });
+  // headlines
+  const aOut = P(t, 8.7, 8.95, E.in2);
+  tf(h3a, { y: 26 * (1 - P(t, 6.15, 6.75, E.out3)) - 24 * aOut, o: P(t, 6.15, 6.45) * (1 - aOut), b: 8 * aOut });
+  tf(h3b, { y: 26 * (1 - P(t, 9.0, 9.6, E.out3)), o: P(t, 9.0, 9.3), b: 10 * (1 - P(t, 9.0, 9.25)) });
+  // cursor: travel to the CTA, click
+  const target = { x: 1256 + 210, y: 716 + 26 };
+  const cm = P(t, 7.55, 8.3, E.io3);
+  const cx = lerp(1640, target.x, cm) + Math.sin(cm * Math.PI) * -60;
+  const cy = lerp(980, target.y, cm) + Math.sin(cm * Math.PI) * 30;
+  const press = t > 8.3 && t < 8.48 ? .88 : 1;
+  tf(cursor, { x: cx - 6, y: cy - 4, s: press, o: P(t, 7.5, 7.7) * (1 - P(t, 9.0, 9.3)) });
+  const rp = P(t, 8.36, 8.95, E.out3);
+  tf(ripple, { x: target.x - 30, y: target.y - 30, s: .3 + rp * 2.2, o: t < 8.36 ? 0 : (1 - rp) * .9 });
+  app.cta.style.transform = `scale(${t > 8.32 && t < 8.5 ? .96 : 1})`;
+  const planning = t > 8.42;
+  const allDone = t > TASK_T0 + 6 * TASK_GAP + .75;
+  app.lbl.innerHTML = allDone ? `${CHECK(18, '#fff', 3)}`.replace('display:block', 'display:inline-block;vertical-align:-3px') + '&nbsp; Planned' : planning ? `${SPARK(17)}&nbsp; Planning…` : `${SPARK(17)}&nbsp; Plan my week`;
+  const sh = (t - 8.42) % .7 / .7;
+  app.shimmer.style.opacity = planning && !allDone ? 1 : 0;
+  app.shimmer.style.transform = `translateX(${sh * 520}px)`;
+  // tasks fly into their slots
+  let remaining = 0;
+  TASKS.forEach((_, i) => {
+    const t0 = TASK_T0 + i * TASK_GAP;
+    const p = t < t0 ? 0 : E.spring(clamp((t - t0) / .8));
+    const lift = t < t0 ? 0 : Math.sin(clamp((t - t0) / .55) * Math.PI) * .9 + Math.max(0, 1 - (t - t0 - .5) / .35) * (t > t0 + .5 ? .25 : 0);
+    app.setTask(i, p, clamp(lift, 0, 1));
+    if (t < t0 + .3) remaining++;
+  });
+  app.count.textContent = remaining;
+  app.done.style.opacity = P(t, TASK_T0 + 6 * TASK_GAP + .6, TASK_T0 + 6 * TASK_GAP + 1.0);
+  app.done.style.transform = `translateY(${16 * (1 - P(t, TASK_T0 + 6 * TASK_GAP + .6, TASK_T0 + 6 * TASK_GAP + 1.1))}px)`;
+
+  // camera: slow push, then fly into the Deep work block
+  const k1 = 1 + .04 * P(t, 7, 11.4, E.io3);
+  const z = P(t, 11.4, 12.05, E.inExpo);
+  const k2 = lerp(1, 4.2, z);
+  const Px = CX + k1 * (DEEP_C.x - CX), Py = CY + k1 * (DEEP_C.y - CY);
+  const Tx = lerp(Px, CX, z), Ty = lerp(Py, CY, z);
+  cam3.style.transform = `translate(${Tx}px,${Ty}px) scale(${k2}) translate(${-Px}px,${-Py}px) translate(${CX}px,${CY}px) scale(${k1}) translate(${-CX}px,${-CY}px)`;
+  cam3.style.opacity = 1 - P(t, 11.82, 12.06);
+  h3b.style.opacity = P(t, 9.0, 9.3) * (1 - P(t, 11.35, 11.6));
+}
+
+// ============================================================================
+// SCENE 4 (12 – 16s): Focus time. Protected.
+// ============================================================================
+const s4 = el('section', 'scene', stage);
+const s4wrap = el('div', 'abs', s4, null, { width: W + 'px', height: H + 'px' });
+const f1 = el('div', 'abs h', s4wrap, 'Focus time.', { fontSize: '124px', left: '150px', top: '390px' });
+const f2 = el('div', 'abs h grad', s4wrap, 'Protected.', { fontSize: '124px', left: '150px', top: '520px', paddingRight: '20px' });
+const FC = { x: 1290, y: 540, w: 640, h: 380 };
+const shield = el('div', 'abs', s4wrap, `<svg width="${FC.w + 76}" height="${FC.h + 76}" style="display:block;overflow:visible"><defs><linearGradient id="shg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9583ff"/><stop offset=".5" stop-color="#d66bf5"/><stop offset="1" stop-color="#ff8a5b"/></linearGradient></defs><rect x="2" y="2" width="${FC.w + 72}" height="${FC.h + 72}" rx="62" fill="rgba(149,131,255,.06)" stroke="url(#shg)" stroke-width="3"/></svg>`);
+const ring = el('div', 'abs', s4wrap, null, { width: FC.w + 76 + 'px', height: FC.h + 76 + 'px', borderRadius: '62px', border: '3px solid rgba(214,107,245,.9)' });
+const fcard = el('div', 'abs fcard', s4wrap, `
+  <div style="position:absolute;left:0;top:0;width:8px;height:100%;background:linear-gradient(180deg,#9583ff,#d66bf5)"></div>
+  <div style="position:absolute;left:48px;top:44px;display:flex;align-items:center;gap:12px;color:#c8bfff;font-size:22px;font-weight:600">${ico('focus', 24).replace('<svg', '<svg style="color:#c8bfff"')}<span>Deep work</span></div>
+  <div class="h" style="position:absolute;left:46px;top:92px;font-size:68px;letter-spacing:-0.04em">Roadmap</div>
+  <div style="position:absolute;left:48px;top:178px;font-size:24px;color:#a8a3c8">Tue · 9:30 – 12:00 PM</div>
+  <div style="position:absolute;left:48px;top:262px;width:544px;height:8px;border-radius:4px;background:rgba(255,255,255,.12)"><div class="fprog" style="height:8px;border-radius:4px;background:linear-gradient(90deg,#9583ff,#d66bf5);width:40%"></div></div>
+  <div class="fleft" style="position:absolute;left:48px;top:292px;font-size:19px;color:#a8a3c8">1h 32m left</div>
+  <div style="position:absolute;right:46px;top:284px;height:40px;padding:0 18px;border-radius:20px;background:rgba(61,214,140,.14);color:#5fe3a1;font-size:17px;font-weight:600;line-height:40px;white-space:nowrap"><span class="fblock">0</span> interruptions moved</div>
+`);
+const fprog = fcard.querySelector('.fprog'), fleft = fcard.querySelector('.fleft'), fblock = fcard.querySelector('.fblock');
+const INV = [
+  { n: 'Quick sync?', s: 'Jordan · 10:00 AM', c: '#4f9bff', i: 'J', t0: 12.82, th: 13.22, S: [1760, -140], H: [1450, 262] },
+  { n: 'Can we hop on a call?', s: 'Alex · 10:30 AM', c: '#e26bd9', i: 'A', t0: 13.38, th: 13.77, S: [1000, 1240], H: [1130, 818] },
+  { n: 'Coffee chat?', s: 'Sam · 11:00 AM', c: '#ffb547', i: 'S', t0: 13.9, th: 14.28, S: [2200, 380], H: [1790, 400] },
+  { n: 'Status update?', s: 'Priya · 11:15 AM', c: '#3dd68c', i: 'P', t0: 14.42, th: 14.8, S: [1200, -160], H: [1120, 262] },
+];
+INV.forEach(v => {
+  v.e = el('div', 'abs invite', s4wrap, `<div class="av" style="background:${v.c}">${v.i}</div><div><b>${v.n}</b><span>${v.s}</span></div>`);
+  const dx = v.H[0] - v.S[0], dy = v.H[1] - v.S[1];
+  const horiz = Math.abs(v.H[0] - FC.x) > FC.w / 2 + 20;
+  v.B = horiz ? [v.H[0] - dx * .8, v.H[1] + dy * .8] : [v.H[0] + dx * .8, v.H[1] - dy * .8];
+});
+
+function scene4(t) {
+  const inn = P(t, 11.86, 12.3, E.out3);
+  const mv = P(t, 12.25, 12.95, E.io3);
+  const cx = lerp(CX, FC.x, mv);
+  tf(fcard, { x: cx - FC.w / 2, y: FC.y - FC.h / 2, s: lerp(1.35, 1, inn), o: inn });
+  let pulse = 0, moved = 0;
+  INV.forEach(v => {
+    if (t >= v.th) { pulse += Math.exp(-(t - v.th) * 5); moved++; }
+  });
+  const shOn = P(t, 12.7, 13.0);
+  tf(shield, { x: cx - FC.w / 2 - 38, y: FC.y - FC.h / 2 - 38, o: shOn * (.35 + .65 * clamp(pulse)), s: 1 + .015 * clamp(pulse) });
+  const last = INV.filter(v => t >= v.th).pop();
+  const rp = last ? clamp((t - last.th) / .6) : 1;
+  tf(ring, { x: cx - FC.w / 2 - 38, y: FC.y - FC.h / 2 - 38, s: 1 + .12 * E.out3(rp), o: last ? (1 - rp) * .9 : 0 });
+  fblock.textContent = moved;
+  fprog.style.width = lerp(38, 46, P(t, 12, 16, E.lin)) + '%';
+  tf(f1, { y: 30 * (1 - P(t, 12.45, 13.05, E.out3)), o: P(t, 12.45, 12.75), b: 10 * (1 - P(t, 12.45, 12.7)) });
+  tf(f2, { y: 30 * (1 - P(t, 12.65, 13.25, E.out3)), o: P(t, 12.65, 12.95), b: 10 * (1 - P(t, 12.65, 12.9)) });
+  INV.forEach(v => {
+    if (t < v.t0) { v.e.style.opacity = 0; return; }
+    let x, y, r, o, s;
+    if (t < v.th) {
+      const p = E.in2(clamp((t - v.t0) / (v.th - v.t0)));
+      x = lerp(v.S[0], v.H[0], p); y = lerp(v.S[1], v.H[1], p); r = 0; o = 1; s = 1;
+    } else {
+      const p = E.out3(clamp((t - v.th) / .7));
+      x = lerp(v.H[0], v.B[0], p); y = lerp(v.H[1], v.B[1], p); r = (v.H[0] > FC.x ? 18 : -18) * p; o = 1 - E.in2(clamp((t - v.th) / .6)); s = 1 - .15 * p;
+    }
+    tf(v.e, { x: x - 170, y: y - 44, r, o, s });
+  });
+  const out = P(t, 15.8, 16.25, E.out3);
+  tf(s4wrap, { s: 1 - .06 * out, o: 1 - .7 * out });
+}
+
+// ============================================================================
+// SCENE 5 (16 – 20s): Every meeting, summarized. (light)
+// ============================================================================
+const s5 = el('section', 'scene light', stage, null, { borderRadius: '48px 48px 0 0' });
+const h5 = el('div', 'abs h ctr', s5, 'Every meeting, <span class="grad">summarized.</span>', { fontSize: '84px', top: '96px', color: '#1d1d1f' });
+const scard = el('div', 'abs scard', s5, null, { left: CX - 560 + 'px', top: '268px' });
+el('div', null, scard, ico('meet', 30).replace('<svg', '<svg style="color:#fff;margin:15px"'), { left: '44px', top: '42px', width: '60px', height: '60px', borderRadius: '16px', background: 'linear-gradient(135deg,#9583ff,#d66bf5)' });
+el('div', null, scard, 'Product sync', { left: '124px', top: '40px', fontSize: '32px', fontWeight: 700, letterSpacing: '-0.025em', fontFamily: 'Inter Tight Variable' });
+el('div', null, scard, 'Today · 10:00 – 10:32 AM · 5 people', { left: '124px', top: '82px', fontSize: '19px', color: '#6e6e73', whiteSpace: 'nowrap' });
+['#4f9bff', '#e26bd9', '#ffb547', '#3dd68c', '#8b7bff'].forEach((c, i) => el('div', null, scard, 'JAPSM'[i], { left: 860 + i * 38 + 'px', top: '50px', width: '46px', height: '46px', borderRadius: '50%', background: c, border: '3px solid #fff', color: '#fff', fontWeight: 700, fontSize: '17px', lineHeight: '40px', textAlign: 'center' }));
+const recLab = el('div', null, scard, '<span style="position:static;display:inline-block;width:10px;height:10px;border-radius:50%;background:#ff453a;margin-right:10px;vertical-align:1px"></span>Listening', { left: '44px', top: '150px', fontSize: '17px', color: '#6e6e73', fontWeight: 600, whiteSpace: 'nowrap' });
+const bars = [];
+for (let i = 0; i < 72; i++) bars.push(el('div', 'wbar', scard, null, { left: 180 + i * 12.4 + 'px', top: '160px', height: '6px' }));
+const sumLab = el('div', 'st', scard, `${SPARK(20, '#b26cf2')} <span class="grad">Summary</span>`, { position: 'absolute', left: '44px', top: '226px', fontSize: '20px', fontWeight: 700, whiteSpace: 'nowrap' });
+const SUM = ['Launch moves to Oct 21 to finish onboarding polish.', 'Pricing page goes live with the new Team plan.', 'Marco owns the beta feedback round.'];
+const sumWords = [];
+SUM.forEach((s, li) => {
+  const line = el('div', 'sline', scard, null, { left: '44px', top: 270 + li * 44 + 'px' });
+  sumWords.push({ e: el('span', null, line, '•  ', { color: '#b0b0b8' }), t0: 17.15 + li * .5 - .05 });
+  s.split(' ').forEach((w, wi, arr) => sumWords.push({ e: el('span', null, line, w + (wi < arr.length - 1 ? ' ' : '')), t0: 17.15 + li * .5 + wi * .045 }));
+});
+const actLab = el('div', null, scard, 'Action items', { left: '44px', top: '432px', fontSize: '20px', fontWeight: 700, color: '#1d1d1f', whiteSpace: 'nowrap' });
+const ACTS = [['Update launch timeline', 'Mon · 2:00 PM'], ['Draft Team plan copy', 'Tue · 4:00 PM'], ['Schedule beta interviews', 'Wed · 11:00 AM']];
+const acts = ACTS.map(([a, b], i) => {
+  const row = el('div', 'arow', scard, null, { left: '44px', top: 474 + i * 62 + 'px' });
+  const chk = el('div', 'chk', row, CHECK(18, '#fff', 3).replace('display:block', 'display:block;margin:4px'));
+  el('div', 'alab', row, a);
+  const chip = el('div', 'achip', row, `${ico('week', 18).replace('<svg', '<svg style="position:absolute;left:16px;top:11px;color:#5b45e0"')}Added · ${b}`);
+  return { row, chk, chip, t0: 18.55 + i * .26 };
+});
+
+function scene5(t) {
+  const up = P(t, 15.82, 16.25, E.out5);
+  s5.style.transform = `translateY(${(1 - up) * H}px)`;
+  s5.style.borderRadius = `${48 * (1 - up)}px ${48 * (1 - up)}px 0 0`;
+  tf(h5, { y: 30 * (1 - P(t, 16.1, 16.7, E.out3)), o: P(t, 16.1, 16.4) });
+  tf(scard, { y: 60 * (1 - P(t, 16.2, 16.9, E.out3)), o: P(t, 16.2, 16.5) });
+  // waveform: lively while listening, then settles
+  const settle = P(t, 17.0, 17.4, E.out3);
+  bars.forEach((b, i) => {
+    const n = Math.abs(Math.sin(i * .9 + t * 9) * Math.sin(i * .37 + t * 5.3)) + .15 * Math.abs(Math.sin(i * 2.1 + t * 13));
+    const env = Math.sin((i / 71) * Math.PI) * .6 + .4;
+    const hgt = lerp(6 + n * 44 * env, 6, settle);
+    b.style.height = hgt + 'px'; b.style.top = 170 - hgt / 2 + 'px';
+    b.style.opacity = lerp(1, .35, settle);
+  });
+  recLab.innerHTML = t < 17.0 ? '<span style="position:static;display:inline-block;width:10px;height:10px;border-radius:50%;background:#ff453a;margin-right:10px;vertical-align:1px"></span>Listening' : `<span style="position:static;display:inline-block;width:10px;height:10px;border-radius:50%;background:#3dd68c;margin-right:10px;vertical-align:1px"></span>32:04`;
+  tf(sumLab, { o: P(t, 16.95, 17.2), y: 10 * (1 - P(t, 16.95, 17.3)) });
+  sumWords.forEach(w => tf(w.e, { o: P(t, w.t0, w.t0 + .18), b: 6 * (1 - P(t, w.t0, w.t0 + .18)), y: 6 * (1 - P(t, w.t0, w.t0 + .25)) }));
+  tf(actLab, { o: P(t, 18.4, 18.6) });
+  acts.forEach(a => {
+    tf(a.row, { o: P(t, a.t0, a.t0 + .2), y: 14 * (1 - P(t, a.t0, a.t0 + .35)) });
+    const c = P(t, a.t0 + .22, a.t0 + .38);
+    a.chk.style.background = c > 0 ? `linear-gradient(135deg, rgba(149,131,255,${c}), rgba(214,107,245,${c}))` : 'transparent';
+    a.chk.style.borderColor = c > .5 ? 'transparent' : '#c7c7cc';
+    a.chk.style.transform = `scale(${1 + .18 * Math.sin(c * Math.PI)})`;
+    tf(a.chip, { x: 40 * (1 - P(t, a.t0 + .3, a.t0 + .65, E.out3)), o: P(t, a.t0 + .3, a.t0 + .5) });
+  });
+}
+
+// ============================================================================
+// SCENE 6 (20 – 23s): the number
+// ============================================================================
+const s6 = el('section', 'scene', stage);
+const s6wrap = el('div', 'abs', s6, null, { width: W + 'px', height: H + 'px' });
+const glow6 = el('div', 'abs', s6wrap, null, { left: CX - 700 + 'px', top: CY - 380 + 'px', width: '1400px', height: '760px', borderRadius: '50%', background: 'radial-gradient(closest-side, rgba(150,110,255,.38), rgba(214,107,245,.18) 50%, transparent)', filter: 'blur(40px)' });
+const n1 = el('div', 'abs ctr', s6wrap, 'Teams on Kairo get back', { fontSize: '50px', fontWeight: 500, color: '#a1a1a6', top: '270px', letterSpacing: '-0.015em' });
+const n2 = el('div', 'abs h ctr tnum', s6wrap, '<span class="grad num" style="padding-right:.05em">6.5</span> hours', { fontSize: '236px', top: '350px', letterSpacing: '-0.055em' });
+const n3 = el('div', 'abs h ctr', s6wrap, 'every single week.', { fontSize: '76px', top: '640px' });
+const num = n2.querySelector('.num');
+
+function scene6(t) {
+  const v = 6.5 * P(t, 20.25, 21.45, E.out3);
+  num.textContent = v.toFixed(1);
+  tf(n1, { o: P(t, 20.05, 20.3), y: 20 * (1 - P(t, 20.05, 20.5)) });
+  tf(n2, { o: P(t, 20.2, 20.4), s: 1.08 - .08 * P(t, 20.2, 20.9, E.outExpo), b: 12 * (1 - P(t, 20.2, 20.45)) });
+  tf(n3, { o: P(t, 21.25, 21.5), y: 24 * (1 - P(t, 21.25, 21.8)) });
+  tf(glow6, { o: P(t, 20.1, 20.8) * (.8 + .2 * Math.sin(t * Math.PI * 2)), s: .9 + .1 * P(t, 20, 23, E.lin) });
+  const out = P(t, 22.72, 23.02, E.in2);
+  tf(s6wrap, { s: 1 + .35 * out, o: 1 - out, b: 14 * out });
+}
+
+// ============================================================================
+// SCENE 7 (23 – 26s): everywhere you work
+// ============================================================================
+const s7 = el('section', 'scene', stage);
+const s7wrap = el('div', 'abs', s7, null, { width: W + 'px', height: H + 'px' });
+const h7 = el('div', 'abs h ctr', s7wrap, 'Wherever <span class="grad">you work.</span>', { fontSize: '84px', top: '70px' });
+const h7s = el('div', 'abs ctr', s7wrap, 'Mac · Windows · iPhone · Web', { fontSize: '28px', fontWeight: 500, color: '#86868b', top: '176px', letterSpacing: '.01em' });
+const lap = el('div', 'abs', s7wrap, null, { left: '250px', top: '262px', width: '1300px', height: '760px' });
+const lapScreen = el('div', 'abs lap-screen', lap, null, { left: '90px', top: '0' });
+const lapInner = el('div', 'lap-inner', lapScreen);
+el('div', null, lapInner, '', { position: 'absolute', left: 0, top: 0, width: '1080px', height: '24px', background: 'rgba(20,20,26,.6)' });
+const miniWrap = el('div', null, lapInner, null, { position: 'absolute', left: '62px', top: '62px', width: '1560px', height: '800px', transform: 'scale(0.6125)', transformOrigin: '0 0' });
+buildApp(miniWrap, true).win.style.boxShadow = '0 30px 80px rgba(0,0,0,.6)';
+el('div', 'abs lap-base', lap, null, { left: '0', top: '698px' });
+el('div', 'abs', lap, null, { left: '570px', top: '698px', width: '160px', height: '8px', borderRadius: '0 0 8px 8px', background: '#1b1b1e' });
+const phone = el('div', 'abs phone', s7wrap, null, { left: '1380px', top: '330px' });
+{
+  const scr = el('div', 'pscr', phone);
+  el('div', null, scr, '9:30', { left: '34px', top: '18px', fontSize: '15px', fontWeight: 650 });
+  el('div', null, scr, '', { left: '146px', top: '16px', width: '22px', height: '22px', borderRadius: '50%', background: '#000', border: '2px solid #1c1c1e' });
+  el('div', null, scr, '<svg width="40" height="12" viewBox="0 0 40 12"><rect x="0" y="7" width="3" height="5" rx="1" fill="#fff"/><rect x="5" y="5" width="3" height="7" rx="1" fill="#fff"/><rect x="10" y="3" width="3" height="9" rx="1" fill="#fff"/><rect x="15" y="1" width="3" height="11" rx="1" fill="#fff"/><rect x="23" y="1" width="16" height="10" rx="3" stroke="#fff" fill="none"/><rect x="25" y="3" width="10" height="6" rx="1.5" fill="#fff"/></svg>', { left: '250px', top: '20px' });
+  el('div', null, scr, 'Today', { left: '22px', top: '62px', fontSize: '34px', fontWeight: 700, letterSpacing: '-0.03em', fontFamily: 'Inter Tight Variable' });
+  el('div', null, scr, 'Tuesday, October 7', { left: '23px', top: '106px', fontSize: '15px', color: '#8e8e93', whiteSpace: 'nowrap' });
+  el('div', null, scr, markSVG(32), { left: '264px', top: '66px' });
+  const items = [[9.5, 12, 'Deep work · Roadmap', 'Focus · notifications paused', '#8b7bff'], [12, 13, 'Lunch', '12:00 – 1:00 PM', '#5d6273'], [14, 15, 'Customer call', '2:00 – 3:00 PM', '#5d6273'], [15.25, 16.25, 'Review PRs', '3:15 – 4:15 PM', '#4f9bff'], [17, 17.5, 'Inbox zero', '5:00 – 5:30 PM', '#2fd4c7']];
+  const PY0 = 150, PH = 58;
+  for (let h = 9; h <= 17; h++) el('div', 'ptime', scr, `${((h + 11) % 12) + 1} ${h >= 12 ? 'PM' : 'AM'}`, { top: PY0 + (h - 9) * PH - 7 + 'px' });
+  for (let h = 9; h <= 17; h++) el('div', null, scr, '', { left: '64px', top: PY0 + (h - 9) * PH + 'px', width: '232px', height: '1px', background: 'rgba(255,255,255,.06)' });
+  items.forEach(([a, b, n, s, c]) => el('div', 'pitem', scr, `<b>${n}</b>${b - a >= 1 ? `<em>${s}</em>` : ''}`, { top: PY0 + (a - 9) * PH + 2 + 'px', height: (b - a) * PH - 4 + 'px', borderLeftColor: c, background: c === '#5d6273' ? '#23252c' : mix('#16171b', c, .3) }));
+  el('div', null, scr, '', { left: '64px', top: PY0 + 1.67 * PH + 'px', width: '232px', height: '2px', background: '#ff5f7e' });
+  el('div', null, scr, '', { left: '108px', top: '650px', width: '100px', height: '5px', borderRadius: '3px', background: 'rgba(255,255,255,.5)' });
+}
+
+function scene7(t) {
+  tf(h7, { o: P(t, 23.05, 23.35), y: 26 * (1 - P(t, 23.05, 23.6)) });
+  tf(h7s, { o: P(t, 23.3, 23.6), y: 16 * (1 - P(t, 23.3, 23.8)) });
+  const lr = P(t, 22.95, 24.0, E.outExpo);
+  tf(lap, { y: 300 * (1 - lr) - 14 * P(t, 23.5, 26, E.lin), s: .94 + .06 * lr + .015 * P(t, 23.5, 26, E.lin), o: P(t, 22.95, 23.25) });
+  const pr = P(t, 23.3, 24.35, E.outExpo);
+  tf(phone, { x: 420 * (1 - pr), y: 40 * (1 - pr) - 30 * P(t, 24, 26, E.lin), r: 8 * (1 - pr), o: P(t, 23.3, 23.55) });
+  const out = P(t, 25.75, 26.1, E.in2);
+  tf(s7wrap, { o: 1 - out, s: 1 - .04 * out, b: 10 * out });
+}
+
+// ============================================================================
+// SCENE 8 (26 – 30s): end card
+// ============================================================================
+const s8 = el('section', 'scene', stage);
+const glow8 = el('div', 'abs', s8, null, {
+  left: CX - 700 + 'px', top: CY - 650 + 'px', width: '1400px', height: '1300px', borderRadius: '50%',
+  background: 'radial-gradient(circle at 40% 45%, rgba(125,107,255,.42), transparent 55%), radial-gradient(circle at 62% 58%, rgba(255,138,91,.3), transparent 55%), radial-gradient(circle at 50% 50%, rgba(214,107,245,.28), transparent 62%)',
+  filter: 'blur(80px)',
+});
+const lock8 = el('div', 'abs', s8, null, { width: W + 'px', height: H + 'px' });
+const mark8 = el('div', 'abs', lock8, markSVG(150));
+const word8 = el('div', 'abs h', lock8, 'Kairo', { fontSize: '156px', letterSpacing: '-0.05em' });
+const tag8 = el('div', 'abs h ctr', lock8, 'Make time for what matters.', { fontSize: '62px', top: '600px', fontWeight: 650, letterSpacing: '-0.035em' });
+const cta8 = el('div', 'abs', lock8, 'Try Kairo free', { left: CX - 150 + 'px', top: '730px', width: '300px', height: '72px', lineHeight: '72px', textAlign: 'center', borderRadius: '36px', background: '#f5f5f7', color: '#000', fontSize: '26px', fontWeight: 650, letterSpacing: '-0.01em' });
+const sub8 = el('div', 'abs ctr', lock8, 'Mac · Windows · iPhone · Web', { fontSize: '22px', color: '#86868b', top: '836px', fontWeight: 500 });
+
+function scene8(t) {
+  tf(glow8, { o: P(t, 25.95, 26.8) * .9, s: lerp(.6, 1, P(t, 25.95, 27.2, E.outExpo)), r: t * 10 });
+  lockup(t, 26.02, mark8, word8, 430);
+  tf(tag8, { o: P(t, 26.95, 27.25), y: 24 * (1 - P(t, 26.95, 27.5)), b: 8 * (1 - P(t, 26.95, 27.2)) });
+  tf(cta8, { o: P(t, 27.35, 27.6), s: lerp(.9, 1, P(t, 27.35, 27.85, E.outBack)) });
+  tf(sub8, { o: P(t, 27.55, 27.85) });
+  tf(lock8, { o: 1 - P(t, 29.45, 29.97, E.in2) });
+  glow8.style.opacity = parseFloat(glow8.style.opacity) * (1 - P(t, 29.3, 29.97));
+}
+
+// ============================================================================
+// timeline
+// ============================================================================
+const SCENES = [
+  [s1, 0, 4.5, scene1],
+  [s2, 3.9, 6.1, scene2],
+  [s3, 5.9, 12.1, scene3],
+  [s4, 11.8, 16.3, scene4],
+  [s5, 15.8, 20.0, scene5],
+  [s6, 20.0, 23.05, scene6],
+  [s7, 22.9, 26.15, scene7],
+  [s8, 25.9, 30.1, scene8],
+];
+window.render = t => {
+  for (const [s, a, b, fn] of SCENES) {
+    const on = t >= a && t < b;
+    show(s, on);
+    if (on) fn(t);
+  }
+};
+window.ready = (async () => {
+  await Promise.all([
+    document.fonts.load('700 100px "Inter Tight Variable"'),
+    document.fonts.load('650 100px "Inter Tight Variable"'),
+    document.fonts.load('400 20px "Inter Variable"'),
+    document.fonts.load('600 20px "Inter Variable"'),
+  ]);
+  await document.fonts.ready;
+  s2.style.display = 'block';
+  wordW = word.getBoundingClientRect().width;
+  s2.style.display = 'none';
+  s1.style.display = 'block';
+  chips.forEach(c => { c.w = c.e.offsetWidth; c.h = c.e.offsetHeight; });
+  const q = new URLSearchParams(location.search).get('t');
+  render(q ? parseFloat(q) : 0);
+  return true;
+})();
+</script>
+</body>
+</html>
