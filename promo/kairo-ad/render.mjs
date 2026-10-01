@@ -6,14 +6,14 @@ import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
 import { mkdirSync, existsSync, writeFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const OUT = resolve(here, 'out');
 const W = 1920, H = 1080, DUR = 30;
 const FPS = +(process.env.FPS || 60);
 const WORKERS = +(process.env.WORKERS || 4);
-const url = 'file://' + resolve(here, 'index.html');
+const url = pathToFileURL(resolve(here, 'index.html')).href;
 mkdirSync(OUT, { recursive: true });
 
 const run = (cmd, args) => new Promise((ok, fail) => {
@@ -77,12 +77,12 @@ await browser.close();
 console.log(`\nrendered ${total} frames in ${((Date.now() - t0) / 1000).toFixed(0)}s`);
 
 const list = resolve(OUT, 'segs.txt');
-writeFileSync(list, segs.filter(Boolean).map(s => `file '${s}'`).join('\n'));
+writeFileSync(list, segs.filter(Boolean).map(s => `file '${s.replace(/\\/g, '/')}'`).join('\n'));
 const silent = resolve(OUT, 'video.mp4');
 await run('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', list, '-c', 'copy', silent]);
 const wav = resolve(here, 'out', 'music.wav');
 const final = resolve(OUT, 'kairo-ad.mp4');
-if (existsSync(wav) && from === 0) {
+if (existsSync(wav) && from === 0 && to === DUR * FPS) {
   await run('ffmpeg', ['-y', '-loglevel', 'error', '-i', silent, '-i', wav, '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '256k', '-shortest', '-movflags', '+faststart', final]);
   console.log('wrote', final);
 } else {
