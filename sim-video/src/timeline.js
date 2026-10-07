@@ -88,9 +88,18 @@ const meteors = track([[0, 0], [52, 0], [54, 1], [60, 1], [63, 0]]);
 const quake = track([[0, 0], [41, 0], [42.5, 1], [47, 1], [52, 0.6], [55, 0]]);
 const traffic = track([[0, 1], [12, 1], [13, 0.3], [16, 0.8], [17.5, 0]]);
 const people = track([[0, 1], [11.4, 1], [12.4, 0]]);
-const streetLights = track([[0, 0.25], [9, 0.6], [10.5, 0], [25, 0], [27, 1], [33, 1], [33.6, 0], [47, 0], [48, 0.15], [55, 0], [67, 0], [70, 0.8], [72, 1]]);
-const cityLights = track([[0, 0.25], [9, 0.5], [10.5, 0], [25, 0], [27, 0.9], [33, 0.9], [33.6, 0], [69.5, 0], [72, 0.7]]);
+const streetLights = track([[0, 0.25], [9, 0.6], [10.5, 0], [25, 0], [27, 1], [33, 1], [33.6, 0]]);
+const cityLights = track([[0, 0.25], [9, 0.5], [10.5, 0], [25, 0], [27, 0.9], [33, 0.9], [33.6, 0]]);
 const waves = track([[0, 0.25], [16, 0.3], [26, 0.4], [40, 0.45], [43, 0.8], [52, 0.6], [58, 0.3]]);
+
+// The giant tides wreck the city behind a lightning flash; forest returns.
+export const WRECK_T = 46.6;
+const wild = track([[0, 0], [55, 0], [66.5, 1]]);
+function flash(t) {
+  const d = t - (WRECK_T - 0.12);
+  if (d < 0 || d > 1.2) return 0;
+  return d < 0.1 ? d / 0.1 : d < 0.28 ? 1 : Math.exp(-(d - 0.28) * 5);
+}
 
 // Counter shows the Moon's distance, then switches to years since breakup.
 const years = track([[0, 0], [54, 0], [57, 100], [66, 10000]], x => x * x);
@@ -171,6 +180,9 @@ export function stateAt(t) {
     streetLights: streetLights(t),
     cityLights: cityLights(t),
     waves: waves(t),
+    wrecked: t >= WRECK_T,
+    wild: wild(t),
+    flash: flash(t),
     fade: clamp01((t - 75.2) / 0.8),
     hud: { title, caption, stamp, counter, sub, show: t > 5.2 && t < 75.5 ? 1 : clamp01((t - 4.8) / 0.4) },
   };

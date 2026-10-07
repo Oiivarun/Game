@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { buildWorld } from './scene.js';
-import { stateAt, DURATION, FPS } from './timeline.js';
+import { stateAt, DURATION, FPS, STAMPS, WRECK_T } from './timeline.js';
 
 const W = 1080, H = 1920;
 const canvas = document.getElementById('c');
@@ -18,7 +18,7 @@ const $ = s => document.querySelector(s);
 const hud = {
   title: $('#title'), counter: $('#counter'), cLabel: $('#counter .label'), cValue: $('#counter .value'),
   cUnit: $('#counter .unit'), cSub: $('#counter .sub'), stamp: $('#stamp'), sValue: $('#stamp .value'),
-  sLabel: $('#stamp .label'), caption: $('#caption'), fade: $('#fade'),
+  sLabel: $('#stamp .label'), caption: $('#caption'), flash: $('#flash'), fade: $('#fade'),
 };
 
 function drawHud(s) {
@@ -38,6 +38,7 @@ function drawHud(s) {
     hud.sLabel.textContent = h.stamp.label;
     hud.stamp.style.transform = `scale(${h.stamp.s})`;
   }
+  hud.flash.style.opacity = s.flash * 0.9;
   hud.fade.style.opacity = s.fade;
 }
 
@@ -49,6 +50,20 @@ window.renderAt = t => {
   return true;
 };
 window.meta = { DURATION, FPS };
+
+// Everything the soundtrack needs to stay in sync with the picture.
+window.cues = () => {
+  const keys = ['seaLevel', 'waves', 'quake', 'crack', 'breakup', 'ring', 'traffic', 'people', 'wild', 'dist'];
+  const out = { duration: DURATION, rate: 100, stamps: STAMPS.map(s => s[0]), wreck: WRECK_T, t: [] };
+  for (const k of keys) out[k] = [];
+  for (let i = 0; i <= DURATION * 100; i++) {
+    const s = stateAt(i / 100);
+    out.t.push(i / 100);
+    for (const k of keys) out[k].push(+s[k].toFixed(4));
+  }
+  out.meteors = world.meteors.map(m => ({ t0: m.t0, dur: m.dur, w: m.w, az: m.az }));
+  return out;
+};
 
 await document.fonts.load('500 60px Cormorant');
 await document.fonts.load('italic 500 44px Cormorant');

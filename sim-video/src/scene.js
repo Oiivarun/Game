@@ -20,7 +20,7 @@ const PALETTES = {
   dusk: { zenith: '#2c4174', horizon: '#e39274', sun: '#ff8c5a', sunI: 0.5, glow: 1.4, hemiSky: '#7480ad', hemiGround: '#4a3a40', hemiI: 0.75, fog: '#a67f86', fogD: 0.00026, water: '#1f3a58', exposure: 1.1, stars: 0.15, keyColor: '#ff9a6a' },
   night: { zenith: '#050a18', horizon: '#1b2947', sun: '#7f9bd8', sunI: 0.45, glow: 0.0, hemiSky: '#33437a', hemiGround: '#161a24', hemiI: 0.45, fog: '#172340', fogD: 0.00024, water: '#0b1a2e', exposure: 1.25, stars: 1, keyColor: '#a9bdff' },
   storm: { zenith: '#5a636e', horizon: '#9ba4ab', sun: '#d8dde0', sunI: 0.9, glow: 0.2, hemiSky: '#a7b0b8', hemiGround: '#5a5a58', hemiI: 1.05, fog: '#8f989f', fogD: 0.00045, water: '#3b4b54', exposure: 1.0, stars: 0, keyColor: '#d8dde0' },
-  twilight: { zenith: '#0d1838', horizon: '#56679c', sun: '#ff9b78', sunI: 0.35, glow: 0.5, hemiSky: '#46558c', hemiGround: '#1d2030', hemiI: 0.55, fog: '#3d4975', fogD: 0.00022, water: '#10223f', exposure: 1.2, stars: 0.7, keyColor: '#9fb6ff' },
+  twilight: { zenith: '#0d1838', horizon: '#64709f', sun: '#ff9b78', sunI: 1.3, glow: 0.6, hemiSky: '#6474a8', hemiGround: '#2e3646', hemiI: 0.9, fog: '#3f4a74', fogD: 0.00022, water: '#10223f', exposure: 1.4, stars: 0.7, keyColor: '#d6dcff' },
 };
 
 for (const p of Object.values(PALETTES)) {
@@ -143,6 +143,9 @@ export function buildWorld(renderer) {
   const path = makePath();
   const r = rng(19);
   const shared = skyUniforms();
+  const wreckHide = []; // swept away by the giant tides
+  const grounds = [];   // surfaces that turn green as the forest returns
+  const ONE = new THREE.Vector3(1, 1, 1);
 
   scene.fog = new THREE.FogExp2(0xffffff, 0.0002);
 
@@ -221,8 +224,10 @@ export function buildWorld(renderer) {
     const depth = 60;
     const g = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, curveSegments: 1 });
     g.rotateX(-Math.PI / 2);
+    const landTop = new THREE.MeshStandardMaterial({ color: '#bdb5a5', roughness: 0.95 });
+    grounds.push({ m: landTop, base: landTop.color.clone(), wild: new THREE.Color('#5f8343') });
     const land = new THREE.Mesh(g, [
-      new THREE.MeshStandardMaterial({ color: '#bdb5a5', roughness: 0.95 }),
+      landTop,
       new THREE.MeshStandardMaterial({ color: '#a9a397', roughness: 0.9 }),
     ]);
     land.position.y = LAND_Y - depth;
@@ -232,25 +237,30 @@ export function buildWorld(renderer) {
 
   // --- promenade, wall, road, footpath ---
   const mat = c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.9 });
+  const gmat = (c, wild) => {
+    const m = mat(c);
+    grounds.push({ m, base: m.color.clone(), wild: new THREE.Color(wild) });
+    return m;
+  };
   const add = (g, m, { shadow = true } = {}) => {
     const mesh = new THREE.Mesh(g, m);
     mesh.receiveShadow = shadow;
     scene.add(mesh);
     return mesh;
   };
-  add(ribbon(path, SEA_OFF, -11.4, LAND_Y + 0.06), mat('#d6ccb8'));           // promenade
-  add(ribbon(path, SEA_OFF, SEA_OFF + 0.9, LAND_Y + 0.65), mat('#e4dccb'));    // the wall people sit on
-  add(ribbon(path, -11.4, 11.4, LAND_Y + 0.12), mat('#3b3d44'));               // carriageways
-  add(ribbon(path, -1.0, 1.0, LAND_Y + 0.4), mat('#6d8752'));                  // median
-  add(ribbon(path, 11.4, 17, LAND_Y + 0.18), mat('#cbc2b1'));                  // footpath
-  add(ribbon(path, -10.9, -10.7, LAND_Y + 0.14), mat('#e8e4d8'));
-  add(ribbon(path, 10.7, 10.9, LAND_Y + 0.14), mat('#e8e4d8'));
+  add(ribbon(path, SEA_OFF, -11.4, LAND_Y + 0.06), gmat('#d6ccb8', '#7b8d58'));           // promenade
+  add(ribbon(path, SEA_OFF, SEA_OFF + 0.9, LAND_Y + 0.65), gmat('#e4dccb', '#9a9a80'));    // the wall people sit on
+  add(ribbon(path, -11.4, 11.4, LAND_Y + 0.12), gmat('#3b3d44', '#56713f'));               // carriageways
+  add(ribbon(path, -1.0, 1.0, LAND_Y + 0.4), gmat('#6d8752', '#4c7337'));                  // median
+  add(ribbon(path, 11.4, 17, LAND_Y + 0.18), gmat('#cbc2b1', '#6a8a4a'));                  // footpath
+  add(ribbon(path, -10.9, -10.7, LAND_Y + 0.14), gmat('#e8e4d8', '#6a8150'));
+  add(ribbon(path, 10.7, 10.9, LAND_Y + 0.14), gmat('#e8e4d8', '#6a8150'));
   {
     // dashed lane lines
     const dash = new THREE.BoxGeometry(3, 0.02, 0.16);
     const lanes = [-7.4, -3.8, 3.8, 7.4];
     const n = Math.floor(path.L / 9) * lanes.length;
-    const im = new THREE.InstancedMesh(dash, new THREE.MeshStandardMaterial({ color: '#e9e6dc', roughness: 0.8 }), n);
+    const im = new THREE.InstancedMesh(dash, gmat('#e9e6dc', '#5d7a44'), n);
     const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler();
     let k = 0;
     for (let s = 0; s + 9 <= path.L; s += 9) {
@@ -302,10 +312,41 @@ export function buildWorld(renderer) {
     const g = facadeBox(w, h, d, r, ...(cell || []));
     g.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, LAND_Y + h / 2, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, yaw, 0)), new THREE.Vector3(1, 1, 1)));
     groups.get(k).geos.push(g);
+    addRuin(tex, color, x, z, yaw, w, h, d);
+  }
+  const rr = rng(77);
+  const ruinGroups = new Map();
+  const WEATHER = new THREE.Color('#7c776a');
+  function addRuin(tex, color, x, z, yaw, w, h, d) {
+    const k = `${tex === deco ? 'd' : tex === modern ? 'm' : 'g'}${color}`;
+    if (!ruinGroups.has(k)) ruinGroups.set(k, { tex, color: new THREE.Color(color).lerp(WEATHER, 0.5), geos: [] });
+    const list = ruinGroups.get(k).geos;
+    const frame = new THREE.Matrix4().compose(
+      new THREE.Vector3(x, LAND_Y - rr() * 1.5, z),
+      new THREE.Quaternion().setFromEuler(new THREE.Euler((rr() - 0.5) * 0.13, yaw, (rr() - 0.5) * 0.13, 'YXZ')),
+      ONE,
+    );
+    const place = (g, ox, oy, oz) => {
+      g.translate(ox, oy, oz);
+      g.applyMatrix4(frame);
+      list.push(g);
+    };
+    if (rr() < 0.22) {
+      const mh = 1.5 + h * 0.08; // collapsed to a mound
+      place(facadeBox(w * 0.95, mh, d * 0.95, rr), 0, mh / 2, 0);
+      return;
+    }
+    const h2 = Math.max(6, h * (0.3 + rr() * 0.5));
+    place(facadeBox(w, h2, d, rr), 0, h2 / 2, 0);
+    // jagged stubs of the floors that fell
+    for (let i = 0, n = 1 + Math.floor(rr() * 3); i < n; i++) {
+      const bw = w * (0.2 + rr() * 0.35), bd = d * (0.2 + rr() * 0.35), bh = 2 + rr() * Math.min(12, h * 0.15);
+      place(facadeBox(bw, bh, bd, rr), (rr() - 0.5) * (w - bw), h2 + bh / 2, (rr() - 0.5) * (d - bd));
+    }
   }
   const DECO = ['#efe6d2', '#f3dcc0', '#e8d3b8', '#f0e2cf', '#dccab0', '#f4ead9', '#ecccb4', '#e3e4dc', '#f1d9ab', '#d9e0d4'];
-  const MODERN = ['#e8e6e0', '#d7d4cc', '#c9ccce', '#efe9dd', '#d2c7b8', '#bfc6cb'];
-  const GLASS = ['#b9c8d4', '#a9bccb', '#cfd7dc', '#9fb1bf', '#dfe2e2'];
+  const MODERN = ['#efe2cf', '#e2c6b2', '#cfdbe2', '#f1e6d4', '#dcbfae', '#c3d1d9', '#e8cdb9'];
+  const GLASS = ['#b2cde0', '#c2d7e3', '#a5c0d3', '#d0dde5', '#dccbc4'];
 
   // Row one: the Art Deco wall along the drive.
   for (let s = 30; s < path.L - 40;) {
@@ -351,14 +392,55 @@ export function buildWorld(renderer) {
     const tex = r() < 0.6 ? glassT : modern;
     addBuilding(tex, (tex === glassT ? GLASS : MODERN)[Math.floor(r() * 5)], x, z, 0.5 + (r() - 0.5) * 0.4, w, h, w * (0.6 + r() * 0.5));
   }
+  const intact = new THREE.Group(), ruins = new THREE.Group();
   for (const { tex, color, geos } of groups.values()) {
     const m = new THREE.MeshStandardMaterial({ color, map: tex.map, emissiveMap: tex.emissive, emissive: 0xffffff, emissiveIntensity: 0, roughness: 0.82, metalness: 0 });
     buildingMats.push(m);
     const mesh = new THREE.Mesh(mergeGeometries(geos), m);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
-    scene.add(mesh);
+    intact.add(mesh);
   }
+  const ruinMats = [];
+  const MOSS = new THREE.Color('#55703c');
+  for (const { tex, color, geos } of ruinGroups.values()) {
+    const m = new THREE.MeshStandardMaterial({ color, map: tex.map, roughness: 0.95, metalness: 0 });
+    ruinMats.push({ m, base: color.clone() });
+    const mesh = new THREE.Mesh(mergeGeometries(geos), m);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    ruins.add(mesh);
+  }
+  ruins.visible = false;
+  scene.add(intact, ruins);
+
+  // --- the forest that grows back over the ruins ---
+  const wildTrees = [];
+  {
+    const wr = rng(91);
+    for (let i = 0; i < 2600; i++) {
+      const a = path.at(wr() * path.L, -18 + Math.pow(wr(), 1.6) * 300);
+      wildTrees.push({ x: a.x + (wr() - 0.5) * 8, z: a.z + (wr() - 0.5) * 8, th: wr(), h: 4 + wr() * 9, s: 2.6 + wr() * 3.4, c: wr() });
+    }
+    for (let i = 0; i < 700; i++) {
+      const x = -720 + wr() * 560, z = 1720 + wr() * 760;
+      if (path.offsetOf(x, z) < -16) continue;
+      wildTrees.push({ x, z, th: wr(), h: 4 + wr() * 10, s: 2.8 + wr() * 3.6, c: wr() });
+    }
+  }
+  const wildTrunk = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.25, 0.45, 1, 5).translate(0, 0.5, 0), mat('#5d4a3a'), wildTrees.length);
+  const wildCanopy = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 0), new THREE.MeshStandardMaterial({ roughness: 0.9, flatShading: true }), wildTrees.length);
+  {
+    const greens = ['#4f7f3f', '#5d8d48', '#6e9c4f', '#3f6b35', '#7aa356', '#8aa94d'].map(c => new THREE.Color(c));
+    wildTrees.forEach((tr, i) => wildCanopy.setColorAt(i, greens[Math.floor(tr.c * greens.length)]));
+    for (const im of [wildTrunk, wildCanopy]) {
+      im.castShadow = true;
+      im.receiveShadow = true;
+      im.visible = false;
+      scene.add(im);
+    }
+  }
+  let lastWild = -1;
 
   // --- trees and palms ---
   {
@@ -403,6 +485,7 @@ export function buildWorld(renderer) {
       im.castShadow = true;
       im.receiveShadow = true;
       scene.add(im);
+      wreckHide.push(im);
     }
   }
 
@@ -431,6 +514,7 @@ export function buildWorld(renderer) {
     }
     pole.castShadow = arm.castShadow = true;
     scene.add(pole, arm, head);
+    wreckHide.push(pole, arm, head);
     var lampHeadMat = headMat;
   }
   const glowGeo = new THREE.BufferGeometry();
@@ -514,6 +598,7 @@ export function buildWorld(renderer) {
       g.rotation.y = r() * 6.28;
       g.traverse(o => { if (o.isMesh) o.castShadow = o.receiveShadow = true; });
       scene.add(g);
+      wreckHide.push(g);
       boats.push({ g, x: a.x, z: a.z, bed: seabedY(a.x, a.z), ph: r() * 6.28, tilt: (r() - 0.5) * 0.5 });
     }
   }
@@ -546,8 +631,8 @@ export function buildWorld(renderer) {
       varying vec3 vN;
       void main() {
         float l = max(dot(normalize(vN), normalize(uLight)), 0.0);
-        vec3 c = vec3(0.78, 0.76, 0.72) * (0.08 + 1.2 * l);
-        c += vec3(1.0, 0.42, 0.12) * uHeat * (1.0 - l) * 0.9;
+        vec3 c = vec3(0.62, 0.6, 0.57) * (0.05 + 0.9 * l);
+        c += vec3(1.0, 0.38, 0.1) * uHeat * pow(1.0 - l, 3.0) * 0.8;
         gl_FragColor = vec4(c, uAlpha);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
@@ -564,7 +649,7 @@ export function buildWorld(renderer) {
     }
     chunkGeo.computeVertexNormals();
   }
-  const NCH = 140;
+  const NCH = 320;
   const chunks = new THREE.InstancedMesh(chunkGeo, chunkMat, NCH);
   chunks.frustumCulled = false;
   chunks.renderOrder = -4;
@@ -572,7 +657,7 @@ export function buildWorld(renderer) {
   const chunkData = [];
   for (let i = 0; i < NCH; i++) {
     const d = new THREE.Vector3(r() - 0.5, r() - 0.5, r() - 0.5).normalize();
-    chunkData.push({ d, size: 0.07 + Math.pow(r(), 2.2) * 0.28, along: (r() - 0.5) * 2, out: 0.2 + r() * 0.9, spin: new THREE.Vector3(r(), r(), r()) });
+    chunkData.push({ d, size: 0.025 + Math.pow(r(), 3) * 0.16, along: (r() - 0.5) * 2, out: 0.2 + r() * 0.9, spin: new THREE.Vector3(r(), r(), r()) });
   }
 
   // --- meteors: thin additive streaks drawn on the sky ---
@@ -664,7 +749,7 @@ export function buildWorld(renderer) {
     moonMat.uniforms.uLight.value.copy(moonLight);
     moonMat.uniforms.uDay.value = dayness;
     moonMat.uniforms.uCrack.value = st.crack;
-    moonMat.uniforms.uBright.value = 1.25 + (1 - dayness) * 0.5;
+    moonMat.uniforms.uBright.value = 1.45 + (1 - dayness) * 0.3;
     moonMat.uniforms.uAlpha.value = 1 - THREE.MathUtils.smoothstep(b, 0.55, 0.95);
     moon.visible = moonMat.uniforms.uAlpha.value > 0.001;
     moonGlow.position.copy(mpos).addScaledVector(moonDir, -10);
@@ -679,9 +764,9 @@ export function buildWorld(renderer) {
       chunkData.forEach((c, i) => {
         const spread = b * b;
         tmpS.copy(mpos)
-          .addScaledVector(c.d, R * (0.7 + c.out * b * 1.6))
-          .addScaledVector(along, R * c.along * spread * 9)
-          .addScaledVector(up, R * c.along * spread * 1.2);
+          .addScaledVector(c.d, R * (0.75 + c.out * b * 0.45))
+          .addScaledVector(along, R * c.along * spread * 14)
+          .addScaledVector(up, R * c.along * spread * 1.6);
         tmpQ.setFromEuler(tmpE.set(c.spin.x * t, c.spin.y * t, c.spin.z * t));
         const s = R * c.size * Math.min(1, b * 4) * (1 - 0.5 * b);
         tmpM.compose(tmpS, tmpQ, new THREE.Vector3(s, s, s));
@@ -726,6 +811,27 @@ export function buildWorld(renderer) {
     waterMat.uniforms.uMoonGlint.value = (1 - dayness) * (st.breakup < 0.9 ? 0.9 : 0) * Math.min(1, st.moonAngle / 0.02 + 0.3);
     waterMat.uniforms.uMoonSize.value = st.moonAngle;
 
+    // After the giant tides: ruins, then the forest comes back.
+    intact.visible = !st.wrecked;
+    ruins.visible = st.wrecked;
+    for (const o of wreckHide) o.visible = !st.wrecked;
+    for (const g of grounds) g.m.color.copy(g.base).lerp(g.wild, st.wild * 0.9);
+    for (const g of ruinMats) g.m.color.copy(g.base).lerp(MOSS, st.wild * 0.4);
+    wildTrunk.visible = wildCanopy.visible = st.wild > 0;
+    if (st.wild > 0 && st.wild !== lastWild) {
+      lastWild = st.wild;
+      wildTrees.forEach((tr, i) => {
+        const g = THREE.MathUtils.clamp((st.wild - tr.th * 0.75) / 0.25, 0, 1);
+        const h = tr.h * g, s = tr.s * g;
+        tmpM.compose(tmpV.set(tr.x, LAND_Y, tr.z), tmpQ.identity(), tmpS.set(g, h || 0.0001, g));
+        wildTrunk.setMatrixAt(i, tmpM);
+        tmpQ.setFromEuler(tmpE.set(tr.c * 3, tr.th * 3, 0));
+        tmpM.compose(tmpV.set(tr.x, LAND_Y + h + s * 0.6, tr.z), tmpQ, tmpS.set(s || 0.0001, (s || 0.0001) * 0.85, s || 0.0001));
+        wildCanopy.setMatrixAt(i, tmpM);
+      });
+      wildTrunk.instanceMatrix.needsUpdate = wildCanopy.instanceMatrix.needsUpdate = true;
+    }
+
     // Lights of the city
     for (const m of buildingMats) m.emissiveIntensity = st.cityLights * 1.6;
     glowMat.opacity = st.streetLights;
@@ -736,12 +842,14 @@ export function buildWorld(renderer) {
     const clock = trafficClock(t);
     let ci = 0, bi = 0;
     for (const v of vehicles) {
+      // The first flood sweeps the road clear; nothing drives after it.
+      const gone = t > (v.kind === 'bus' ? 11.5 : 11.6) + v.c * 0.8;
       let s = (v.s0 + v.v * clock) % path.L;
       if (s < 0) s += path.L;
       const a = path.at(s, v.lane);
       const yaw = a.yaw + (v.v < 0 ? Math.PI : 0);
       tmpQ.setFromEuler(tmpE.set(0, yaw, 0));
-      tmpM.compose(tmpV.set(a.x, LAND_Y + 0.12, a.z), tmpQ, tmpS.set(1, 1, 1));
+      tmpM.compose(tmpV.set(a.x, LAND_Y + 0.12, a.z), tmpQ, tmpS.setScalar(gone ? 0 : 1));
       if (v.kind === 'bus') {
         busBody.setMatrixAt(v.idx, tmpM);
         busWin.setMatrixAt(v.idx * 2, tmpM);
@@ -779,5 +887,5 @@ export function buildWorld(renderer) {
     sky.position.copy(camera.position);
   }
 
-  return { scene, camera, update };
+  return { scene, camera, update, meteors: metData };
 }

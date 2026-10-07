@@ -93,7 +93,7 @@ export function moonTexture(seed) {
     g.beginPath();
     g.arc(x + rad * 0.15, y + rad * 0.15, rad, 0, Math.PI * 2);
     g.fill();
-    g.strokeStyle = 'rgba(245,244,238,0.35)';
+    g.strokeStyle = 'rgba(245,244,238,0.2)';
     g.lineWidth = Math.max(1, rad * 0.22);
     g.beginPath();
     g.arc(x - rad * 0.1, y - rad * 0.1, rad, Math.PI * 0.9, Math.PI * 1.9);

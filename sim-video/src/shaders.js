@@ -299,7 +299,7 @@ export function makeMoonMaterial(shared, map) {
           vec3 hot = mix(vec3(1.0, 0.35, 0.08), vec3(1.0, 0.85, 0.5), line * line);
           col = mix(col, hot * 2.4, line);
         }
-        col = col * (1.0 - 0.45 * uDay) + skyGradient(normalize(vDir)) * uDay;
+        col = col * (1.0 - 0.2 * uDay) + skyGradient(normalize(vDir)) * uDay * (1.0 - 0.55 * lit);
         gl_FragColor = vec4(col, uAlpha);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
