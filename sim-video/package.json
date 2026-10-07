@@ -1,0 +1,19 @@
+{
+  "name": "moon-closer",
+  "version": "1.0.0",
+  "description": "What if the Moon came closer? — a vertical simulation video rendered frame by frame from a Three.js scene.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "stills": "node render.js --stills",
+    "render": "node render.js"
+  },
+  "dependencies": {
+    "@fontsource/cormorant-garamond": "^5.0.0",
+    "@fontsource/jost": "^5.0.0",
+    "three": "^0.180.0"
+  },
+  "devDependencies": {
+    "playwright": "^1.56.1"
+  }
+}

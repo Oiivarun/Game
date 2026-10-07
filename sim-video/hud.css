@@ -1,0 +1,27 @@
+@font-face { font-family: 'Cormorant'; font-style: normal; font-weight: 500; src: url('node_modules/@fontsource/cormorant-garamond/files/cormorant-garamond-latin-500-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Cormorant'; font-style: italic; font-weight: 500; src: url('node_modules/@fontsource/cormorant-garamond/files/cormorant-garamond-latin-500-italic.woff2') format('woff2'); }
+@font-face { font-family: 'Jost'; font-style: normal; font-weight: 500; src: url('node_modules/@fontsource/jost/files/jost-latin-500-normal.woff2') format('woff2'); }
+
+html, body { margin: 0; padding: 0; background: #000; overflow: hidden; }
+canvas { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; display: block; }
+#hud { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; color: #fff; pointer-events: none;
+  text-shadow: 0 2px 18px rgba(0,0,0,.35), 0 1px 3px rgba(0,0,0,.35); }
+
+#title { position: absolute; left: 140px; right: 140px; top: 330px; text-align: center;
+  font: 500 78px/1.08 'Cormorant', serif; letter-spacing: -0.5px; }
+
+#counter { position: absolute; left: 64px; top: 880px; }
+#counter .label { font: 500 19px 'Jost', sans-serif; letter-spacing: 4.2px; opacity: .92; }
+#counter .value { font: 500 60px/1.1 'Cormorant', serif; margin-top: 10px; font-variant-numeric: lining-nums tabular-nums; }
+#counter .unit { font: 500 14px 'Jost', sans-serif; letter-spacing: 3px; opacity: .85; margin-top: 2px; }
+#counter .sub { font: italic 500 30px 'Cormorant', serif; margin-top: 10px; opacity: .92; }
+
+#caption { position: absolute; left: 110px; right: 110px; top: 1100px; text-align: center;
+  font: italic 500 44px/1.15 'Cormorant', serif; }
+
+#stamp { position: absolute; left: 0; right: 0; top: 560px; text-align: center; transform-origin: 50% 50%; }
+#stamp .value { font: 500 136px/1 'Cormorant', serif; letter-spacing: -1px; font-variant-numeric: lining-nums; }
+#stamp .label { display: inline-block; font: 500 22px 'Jost', sans-serif; letter-spacing: 7px; margin-top: 14px;
+  padding: 0 0 12px 7px; border-bottom: 2px solid rgba(255,255,255,.85); }
+
+#fade { position: absolute; inset: 0; background: #000; opacity: 0; }
