@@ -1,9 +1,10 @@
 // Renders the video frame by frame in headless Chromium.
 //
 //   node render.js --stills 2,26,49,73     one PNG per time, plus a contact sheet
-//   node render.js                         the whole video, with sound → out/moon-closer.mp4
+//   node render.js                         the whole video, with sound → out/<name>.mp4
 //   node render.js --audio                 redo only the soundtrack on the last render
 //   node render.js --from 10 --to 20       a slice, for checking a section
+//   --page orr.html                        which video (default index.html, the Moon)
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -40,7 +41,7 @@ const server = http.createServer((req, res) => {
   });
 });
 await new Promise(r => server.listen(0, '127.0.0.1', r));
-const url = `http://127.0.0.1:${server.address().port}/index.html`;
+const url = `http://127.0.0.1:${server.address().port}/${opt('--page') || 'index.html'}`;
 
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const page = await browser.newPage({ viewport: { width: 1080, height: 1920 }, deviceScaleFactor: 1 });
@@ -48,7 +49,7 @@ page.on('console', m => console.log('[page]', m.text()));
 page.on('pageerror', e => console.error('[page error]', e.message));
 await page.goto(url);
 await page.waitForFunction(() => window.ready === true, null, { timeout: 180000 });
-const { DURATION, FPS } = await page.evaluate(() => window.meta);
+const { DURATION, FPS, name, audio } = await page.evaluate(() => window.meta);
 
 async function frame(t) {
   await page.evaluate(t => window.renderAt(t), t);
@@ -56,7 +57,7 @@ async function frame(t) {
 
 if (opt('--stills') !== null) {
   const times = (opt('--stills') || '2,26,49,73').split(',').map(Number);
-  const dir = path.join(out, 'stills');
+  const dir = path.join(out, name === 'moon-closer' ? 'stills' : `stills-${name}`);
   fs.mkdirSync(dir, { recursive: true });
   const files = [];
   for (const t of times) {
@@ -74,12 +75,11 @@ if (opt('--stills') !== null) {
   await run('ffmpeg', ['-y', '-v', 'error', ...inputs, '-filter_complex', filter, '-q:v', '3', sheet]);
   console.log(`sheet → ${path.relative(root, sheet)}`);
 } else if (args.includes('--audio')) {
-  await soundtrack(path.join(out, 'moon-closer.silent.mp4'), path.join(out, 'moon-closer.mp4'));
+  await soundtrack(path.join(out, `${name}.silent.mp4`), path.join(out, `${name}.mp4`));
 } else {
   const from = parseFloat(opt('--from') ?? 0), to = parseFloat(opt('--to') ?? DURATION);
   const whole = from === 0 && to === DURATION;
-  const name = opt('--out') || (whole ? 'moon-closer.silent.mp4' : `slice-${from}-${to}.mp4`);
-  const file = path.join(out, name);
+  const file = path.join(out, opt('--out') || (whole ? `${name}.silent.mp4` : `${name}-slice-${from}-${to}.mp4`));
   const ff = spawn('ffmpeg', ['-y', '-v', 'error', '-f', 'image2pipe', '-framerate', String(FPS), '-i', '-',
     '-c:v', 'libx264', '-preset', 'slow', '-crf', '17', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', file], { stdio: ['pipe', 'inherit', 'inherit'] });
   const n = Math.round((to - from) * FPS);
@@ -96,15 +96,15 @@ if (opt('--stills') !== null) {
   ff.stdin.end();
   await new Promise(r => ff.on('close', r));
   console.log(`video → ${path.relative(root, file)}`);
-  if (whole) await soundtrack(file, path.join(out, 'moon-closer.mp4'));
+  if (whole) await soundtrack(file, path.join(out, `${name}.mp4`));
 }
 
 // Synthesise the ambience from the timeline and lay it under the picture.
 async function soundtrack(silent, final) {
-  const cuesFile = path.join(out, 'cues.json');
-  const wav = path.join(out, 'ambience.wav');
+  const cuesFile = path.join(out, `${name}-cues.json`);
+  const wav = path.join(out, `${name}.wav`);
   fs.writeFileSync(cuesFile, JSON.stringify(await page.evaluate(() => window.cues())));
-  await run('python3', [path.join(root, 'audio.py'), cuesFile, wav]);
+  await run('python3', [path.join(root, audio), cuesFile, wav]);
   await run('ffmpeg', ['-y', '-v', 'error', '-i', silent, '-i', wav, '-map', '0:v', '-map', '1:a', '-c:v', 'copy',
     '-c:a', 'aac', '-b:a', '192k', '-shortest', '-movflags', '+faststart', final]);
   console.log(`video with sound → ${path.relative(root, final)}`);

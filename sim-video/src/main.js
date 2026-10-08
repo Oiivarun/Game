@@ -49,7 +49,7 @@ window.renderAt = t => {
   drawHud(s);
   return true;
 };
-window.meta = { DURATION, FPS };
+window.meta = { DURATION, FPS, name: 'moon-closer', audio: 'audio.py' };
 
 // Everything the soundtrack needs to stay in sync with the picture.
 window.cues = () => {
